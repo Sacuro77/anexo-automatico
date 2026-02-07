@@ -98,6 +98,27 @@ MINIO_ROOT_USER = env("MINIO_ROOT_USER", default="")
 MINIO_ROOT_PASSWORD = env("MINIO_ROOT_PASSWORD", default="")
 MINIO_USE_SSL = env.bool("MINIO_USE_SSL", default=False)
 
+S3_ENDPOINT_URL = env(
+    "S3_ENDPOINT_URL",
+    default=f"http://{env('MINIO_ENDPOINT', default='minio:9000')}",
+)
+S3_ACCESS_KEY_ID = env(
+    "S3_ACCESS_KEY_ID",
+    default=env("MINIO_ROOT_USER", default="minioadmin"),
+)
+S3_SECRET_ACCESS_KEY = env(
+    "S3_SECRET_ACCESS_KEY",
+    default=env("MINIO_ROOT_PASSWORD", default="minioadmin"),
+)
+S3_BUCKET_NAME = env(
+    "S3_BUCKET_NAME",
+    default=env("MINIO_BUCKET_NAME", default="facturas"),
+)
+S3_USE_SSL = env.bool(
+    "S3_USE_SSL",
+    default=env.bool("MINIO_USE_SSL", default=False),
+)
+
 LOG_LEVEL = env("LOG_LEVEL", default="INFO")
 LOGGING = {
     "version": 1,

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% if importacion.status == "PENDING" or importacion.status == "RUNNING" %}
+      <meta http-equiv="refresh" content="2" />
+    {% endif %}
+    <title>Detalle importación</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f7f7fb;
+        color: #111;
+        margin: 0;
+        padding: 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 40px auto;
+        padding: 0 20px 60px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 8px 12px;
+      }
+      dt {
+        font-weight: 600;
+        color: #374151;
+      }
+      dd {
+        margin: 0;
+      }
+      pre {
+        background: #111827;
+        color: #f9fafb;
+        padding: 16px;
+        border-radius: 10px;
+        overflow-x: auto;
+      }
+      a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .notice {
+        margin: 8px 0 16px;
+        color: #6b7280;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="card">
+        <h1>Importación #{{ importacion.id }}</h1>
+        {% if importacion.status == "PENDING" or importacion.status == "RUNNING" %}
+          <p class="notice">Procesando: esta página se actualizará automáticamente.</p>
+        {% endif %}
+        <p><a href="{% url 'ingesta-index' %}">Volver</a></p>
+        <dl>
+          <dt>Estado</dt>
+          <dd>{{ importacion.status }}</dd>
+          <dt>Creada</dt>
+          <dd>{{ importacion.created_at }}</dd>
+          <dt>Inició</dt>
+          <dd>{{ importacion.started_at|default:"-" }}</dd>
+          <dt>Finalizó</dt>
+          <dd>{{ importacion.finished_at|default:"-" }}</dd>
+          <dt>Archivos</dt>
+          <dd>{{ importacion.total_archivos }}</dd>
+          <dt>Facturas</dt>
+          <dd>{{ importacion.total_facturas }}</dd>
+          <dt>Proveedores</dt>
+          <dd>{{ importacion.total_proveedores }}</dd>
+          <dt>Errores</dt>
+          <dd>{{ importacion.error_count }}</dd>
+          <dt>Resumen</dt>
+          <dd>{{ importacion.error_summary|default:"-" }}</dd>
+          <dt>ZIP S3</dt>
+          <dd>{{ importacion.s3_key_zip|default:"-" }}</dd>
+        </dl>
+        <h2>Log</h2>
+        <pre>{{ importacion.log_json|default:""|pprint }}</pre>
+      </div>
+    </main>
+  </body>
+</html>
