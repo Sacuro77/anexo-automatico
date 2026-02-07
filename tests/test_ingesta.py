@@ -106,6 +106,26 @@ def test_parser_autorizacion_wrapper():
     assert "No se encontró comprobante en autorización" not in warnings
 
 
+def test_parser_moneda_dolar_normaliza_usd():
+    xml = """
+    <factura>
+      <infoTributaria>
+        <ruc>0999999999</ruc>
+        <razonSocial>Proveedor Moneda</razonSocial>
+        <claveAcceso>MONEDA-001</claveAcceso>
+      </infoTributaria>
+      <infoFactura>
+        <fechaEmision>03/03/2024</fechaEmision>
+        <moneda>DOLAR</moneda>
+      </infoFactura>
+    </factura>
+    """.strip().encode("utf-8")
+
+    parsed, _warnings = parse_xml_bytes(xml)
+
+    assert parsed.moneda == "USD"
+
+
 @pytest.mark.django_db
 def test_constraints_unique():
     Proveedor.objects.create(ruc="999")

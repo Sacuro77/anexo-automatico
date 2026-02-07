@@ -72,6 +72,20 @@ def _find_iva(root: ElementTree.Element) -> str | None:
     return None
 
 
+def _normalize_currency(value: str | None) -> str | None:
+    if not value:
+        return None
+    cleaned = value.strip().upper()
+    if not cleaned:
+        return None
+    cleaned = cleaned.replace("Ó", "O")
+    if cleaned in {"DOLAR", "DOLARES"}:
+        return "USD"
+    if len(cleaned) == 3 and cleaned.isalpha():
+        return cleaned
+    return None
+
+
 def _unwrap_autorizacion(
     root: ElementTree.Element, warnings: list[str]
 ) -> ElementTree.Element:
@@ -139,7 +153,8 @@ def parse_xml_bytes(xml_bytes: bytes) -> tuple[ParsedFactura, list[str]]:
     if iva_raw and iva is None:
         warnings.append("No se pudo parsear IVA")
 
-    moneda = _find_first_text(root, ["moneda"])
+    moneda_raw = _find_first_text(root, ["moneda"])
+    moneda = _normalize_currency(moneda_raw) or "USD"
 
     return (
         ParsedFactura(
