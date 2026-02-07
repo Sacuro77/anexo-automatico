@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 from django.conf import settings
 
@@ -13,6 +14,7 @@ def get_client():
         aws_access_key_id=settings.S3_ACCESS_KEY_ID,
         aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
         use_ssl=settings.S3_USE_SSL,
+        config=Config(s3={"addressing_style": "path"}),
     )
 
 
