@@ -3,6 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% if importacion.status == "PENDING" or importacion.status == "RUNNING" %}
+      <meta http-equiv="refresh" content="2" />
+    {% endif %}
     <title>Detalle importación</title>
     <style>
       body {
@@ -46,12 +49,19 @@
         color: #2563eb;
         text-decoration: none;
       }
+      .notice {
+        margin: 8px 0 16px;
+        color: #6b7280;
+      }
     </style>
   </head>
   <body>
     <main>
       <div class="card">
         <h1>Importación #{{ importacion.id }}</h1>
+        {% if importacion.status == "PENDING" or importacion.status == "RUNNING" %}
+          <p class="notice">Procesando: esta página se actualizará automáticamente.</p>
+        {% endif %}
         <p><a href="{% url 'ingesta-index' %}">Volver</a></p>
         <dl>
           <dt>Estado</dt>
