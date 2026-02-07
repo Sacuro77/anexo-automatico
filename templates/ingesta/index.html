@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ingesta ZIP/XML</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f7f7fb;
+        color: #111;
+        margin: 0;
+        padding: 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 40px auto;
+        padding: 0 20px 60px;
+      }
+      header {
+        margin-bottom: 24px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+      .messages {
+        margin-bottom: 16px;
+      }
+      .messages p {
+        margin: 0 0 8px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #eef2ff;
+      }
+      .messages p.error {
+        background: #fee2e2;
+      }
+      .messages p.success {
+        background: #dcfce7;
+      }
+      form {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      input[type="file"] {
+        flex: 1 1 auto;
+      }
+      button {
+        border: none;
+        background: #1f2937;
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+      }
+      a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .meta {
+        color: #6b7280;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Ingesta ZIP/XML</h1>
+        <p class="meta">Sube un ZIP con XML de facturas para procesarlo en background.</p>
+      </header>
+
+      <div class="card">
+        <h2>Subir ZIP</h2>
+        <div class="messages">
+          {% for message in messages %}
+            <p class="{{ message.tags }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form.archivo }}
+          <button type="submit">Enviar</button>
+        </form>
+        {% if form.errors %}
+          <p class="meta">{{ form.errors }}</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>Importaciones recientes</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Estado</th>
+              <th>Archivos</th>
+              <th>Facturas</th>
+              <th>Errores</th>
+              <th>Creada</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for imp in importaciones %}
+              <tr>
+                <td><a href="{% url 'ingesta-detail' imp.id %}">#{{ imp.id }}</a></td>
+                <td>{{ imp.status }}</td>
+                <td>{{ imp.total_archivos }}</td>
+                <td>{{ imp.total_facturas }}</td>
+                <td>{{ imp.error_count }}</td>
+                <td>{{ imp.created_at }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6">Sin importaciones todavía.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="meta">
+          <a href="{% url 'ingesta-list' %}">Ver todas las importaciones</a>
+        </p>
+      </div>
+    </main>
+  </body>
+</html>

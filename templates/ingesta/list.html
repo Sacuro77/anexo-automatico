@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Importaciones</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f7f7fb;
+        color: #111;
+        margin: 0;
+        padding: 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 40px auto;
+        padding: 0 20px 60px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+      }
+      a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="card">
+        <h1>Importaciones</h1>
+        <p><a href="{% url 'ingesta-index' %}">Volver</a></p>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Estado</th>
+              <th>Archivos</th>
+              <th>Facturas</th>
+              <th>Errores</th>
+              <th>Creada</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for imp in importaciones %}
+              <tr>
+                <td><a href="{% url 'ingesta-detail' imp.id %}">#{{ imp.id }}</a></td>
+                <td>{{ imp.status }}</td>
+                <td>{{ imp.total_archivos }}</td>
+                <td>{{ imp.total_facturas }}</td>
+                <td>{{ imp.error_count }}</td>
+                <td>{{ imp.created_at }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6">Sin importaciones todavía.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </body>
+</html>
