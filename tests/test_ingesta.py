@@ -78,6 +78,34 @@ def test_parser_minimo():
     assert "No se encontró RUC" not in warnings
 
 
+def test_parser_autorizacion_wrapper():
+    xml = """
+    <autorizacion>
+      <estado>AUTORIZADO</estado>
+      <comprobante><![CDATA[
+        <factura>
+          <infoTributaria>
+            <ruc>1790012345001</ruc>
+            <razonSocial>Proveedor SRI</razonSocial>
+            <claveAcceso>CLAVE-SRI-001</claveAcceso>
+          </infoTributaria>
+          <infoFactura>
+            <fechaEmision>02/02/2024</fechaEmision>
+          </infoFactura>
+        </factura>
+      ]]></comprobante>
+    </autorizacion>
+    """.strip().encode("utf-8")
+
+    parsed, warnings = parse_xml_bytes(xml)
+
+    assert parsed.ruc == "1790012345001"
+    assert parsed.razon_social == "Proveedor SRI"
+    assert parsed.clave_acceso == "CLAVE-SRI-001"
+    assert str(parsed.fecha_emision) == "2024-02-02"
+    assert "No se encontró comprobante en autorización" not in warnings
+
+
 @pytest.mark.django_db
 def test_constraints_unique():
     Proveedor.objects.create(ruc="999")

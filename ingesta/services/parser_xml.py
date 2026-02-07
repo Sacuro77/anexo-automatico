@@ -72,9 +72,34 @@ def _find_iva(root: ElementTree.Element) -> str | None:
     return None
 
 
+def _unwrap_autorizacion(
+    root: ElementTree.Element, warnings: list[str]
+) -> ElementTree.Element:
+    if _normalize_tag(root.tag) != "autorizacion":
+        return root
+    comprobante_elem = None
+    for elem in root.iter():
+        if _normalize_tag(elem.tag) == "comprobante":
+            comprobante_elem = elem
+            break
+    if comprobante_elem is None or not comprobante_elem.text:
+        warnings.append("No se encontró comprobante en autorización")
+        return root
+    comprobante_text = comprobante_elem.text.strip()
+    if not comprobante_text:
+        warnings.append("Comprobante vacío")
+        return root
+    try:
+        return ElementTree.fromstring(comprobante_text)
+    except ElementTree.ParseError:
+        warnings.append("No se pudo parsear comprobante")
+        return root
+
+
 def parse_xml_bytes(xml_bytes: bytes) -> tuple[ParsedFactura, list[str]]:
     warnings: list[str] = []
     root = ElementTree.fromstring(xml_bytes)
+    root = _unwrap_autorizacion(root, warnings)
 
     ruc = _find_first_text(root, ["ruc", "rucemisor", "ruccomprador"])
     if not ruc:
