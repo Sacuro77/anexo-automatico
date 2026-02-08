@@ -289,6 +289,43 @@ def test_importacion_detail_resumen_por_categoria(client):
 
 
 @pytest.mark.django_db
+def test_importacion_export_csv(client):
+    proveedor = Proveedor.objects.create(ruc="777", razon_social="Proveedor CSV")
+    factura_uno = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-CSV-1")
+    factura_dos = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-CSV-2")
+    categoria = Categoria.objects.create(nombre="SALUD")
+    AsignacionClasificacionFactura.objects.create(
+        factura=factura_uno,
+        categoria_sugerida=categoria,
+        confianza=Confianza.HIGH,
+    )
+    AsignacionClasificacionFactura.objects.create(
+        factura=factura_dos,
+        categoria_sugerida=None,
+        confianza=Confianza.LOW,
+    )
+    importacion = Importacion.objects.create(
+        log_json={
+            "files": [
+                {"factura_id": factura_uno.id},
+                {"factura_id": factura_dos.id},
+            ]
+        }
+    )
+
+    response = client.get(f"/ingesta/importaciones/{importacion.id}/export.csv")
+
+    assert response.status_code == 200
+    assert "text/csv" in response["Content-Type"]
+    content = response.content.decode("utf-8")
+    assert "ruc,razon_social,clave_acceso,categoria_sugerida,confianza" in content
+    assert "SALUD" in content
+    assert "Sin categoría" in content
+    assert "CLAVE-CSV-1" in content
+    assert "CLAVE-CSV-2" in content
+
+
+@pytest.mark.django_db
 def test_revisar_incluye_low_o_sin_categoria(client):
     categoria = Categoria.objects.create(nombre="Servicios")
     proveedor = Proveedor.objects.create(ruc="555", razon_social="Proveedor Uno")
