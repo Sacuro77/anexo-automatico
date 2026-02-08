@@ -24,6 +24,23 @@ Micro-SaaS para automatizar anexos. Proyecto Django preparado para desarrollo lo
 - Landing:
   - `http://localhost:8000/`
 
+## Agent CLI (Fase 2.2)
+Cliente mínimo para consumir la API del agente y registrar eventos simulados.
+
+Requisitos:
+- Python 3.10+
+- `pip install -r agent_cli/requirements.txt`
+
+Ejemplo PowerShell:
+```powershell
+$env:ANEXO_BASE_URL="http://localhost:8000"
+$env:AGENT_TOKEN="TOKEN_DEL_SAAS"
+$env:IMPORTACION_ID="1"
+python agent_cli/main.py
+```
+
+Si corres el CLI dentro de Docker, usa `ANEXO_BASE_URL="http://web:8000"` (mismo network de compose).
+
 ## Comandos rápidos (Makefile)
 Si tienes `make` disponible:
 - `make up`
