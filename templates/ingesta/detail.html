@@ -116,6 +116,27 @@
           <dt>ZIP S3</dt>
           <dd>{{ importacion.s3_key_zip|default:"-" }}</dd>
         </dl>
+        <h2>Resumen por categoría</h2>
+        {% if resumen_por_categoria %}
+          <table>
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th># Facturas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in resumen_por_categoria %}
+                <tr>
+                  <td>{{ item.nombre_categoria }}</td>
+                  <td>{{ item.count }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="notice">Sin datos.</p>
+        {% endif %}
         <h2>Sugerencias de clasificación</h2>
         <p class="notice">
           {% if fallback_message %}
