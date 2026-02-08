@@ -9,7 +9,9 @@ const state = {
   browser: null,
   context: null,
   page: null,
-  loggedIn: false
+  loggedIn: false,
+  plan: null,
+  planIndex: 0
 };
 
 const SCREENSHOT_DIR = path.join(__dirname, "..", "tmp", "agent_desktop_screenshots");
@@ -110,6 +112,19 @@ function sanitizeLabel(label) {
     return "screenshot";
   }
   return label.replace(/[^a-z0-9_-]/gi, "_").slice(0, 48);
+}
+
+function getActionsFromPlan(plan) {
+  if (!plan || typeof plan !== "object") {
+    return [];
+  }
+  if (Array.isArray(plan.acciones)) {
+    return plan.acciones;
+  }
+  if (Array.isArray(plan.actions)) {
+    return plan.actions;
+  }
+  return [];
 }
 
 async function captureScreenshot(label) {
@@ -248,6 +263,48 @@ ipcMain.handle("agent:status", async (_event, payload) => {
     },
     async () => getStateSnapshot()
   );
+});
+
+ipcMain.handle("agent:checkToken", async (_event, payload) => {
+  const { baseUrl, token } = payload;
+  requireValue(baseUrl, "base_url");
+  requireValue(token, "token");
+  const url = buildUrl(baseUrl, "/api/agent/me");
+  return requestJson("GET", url, token);
+});
+
+ipcMain.handle("agent:loadPlan", async (_event, payload) => {
+  const { baseUrl, token, importacionId } = payload;
+  requireValue(baseUrl, "base_url");
+  requireValue(token, "token");
+  requireValue(importacionId, "importacion_id");
+
+  const url = buildUrl(
+    baseUrl,
+    `/api/agent/importaciones/${importacionId}/plan.json`
+  );
+  const plan = await requestJson("GET", url, token);
+  const actions = getActionsFromPlan(plan);
+  state.plan = plan;
+  state.planIndex = 0;
+  const currentItem = actions[0] || null;
+
+  const eventPayload = buildEvent(
+    importacionId,
+    "plan_loaded",
+    "ok",
+    `Plan con ${actions.length} acciones.`
+  );
+  const eventResponse = await postEvent(baseUrl, token, eventPayload);
+
+  return {
+    plan,
+    actionsCount: actions.length,
+    currentIndex: state.planIndex,
+    currentItem,
+    event: eventResponse,
+    eventPayload
+  };
 });
 
 ipcMain.handle("agent:screenshot", async (_event, payload) => {

@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld("agentApi", {
     ipcRenderer.invoke("agent:markLoggedIn", { baseUrl, token, importacionId }),
   status: (baseUrl, token, importacionId) =>
     ipcRenderer.invoke("agent:status", { baseUrl, token, importacionId }),
+  checkToken: (baseUrl, token) =>
+    ipcRenderer.invoke("agent:checkToken", { baseUrl, token }),
+  loadPlan: (baseUrl, token, importacionId) =>
+    ipcRenderer.invoke("agent:loadPlan", { baseUrl, token, importacionId }),
   screenshot: (baseUrl, token, importacionId, label) =>
     ipcRenderer.invoke("agent:screenshot", { baseUrl, token, importacionId, label }),
   postEvent: (baseUrl, token, eventPayload) =>

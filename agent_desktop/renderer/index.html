@@ -120,6 +120,45 @@
         gap: 12px;
       }
 
+      .plan {
+        display: grid;
+        gap: 12px;
+      }
+
+      .plan h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        color: #2e3a44;
+      }
+
+      .plan-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
+      .plan-card {
+        background: #f9fbff;
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid #d7e0ea;
+        display: grid;
+        gap: 6px;
+      }
+
+      .plan-card span {
+        font-size: 0.8rem;
+        color: #5a6874;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .plan-card strong {
+        font-size: 0.95rem;
+        color: #0f1b24;
+        word-break: break-word;
+      }
+
       button {
         border: none;
         padding: 12px 14px;
@@ -202,8 +241,48 @@
             <strong id="statusLogin">-</strong>
           </div>
           <div class="status-card">
+            <span>Token</span>
+            <strong id="statusToken">-</strong>
+          </div>
+          <div class="status-card">
             <span>URL</span>
             <strong id="statusUrl">-</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="plan">
+        <h2>Plan</h2>
+        <div class="plan-summary">
+          <div class="plan-card">
+            <span>Acciones</span>
+            <strong id="planCount">-</strong>
+          </div>
+          <div class="plan-card">
+            <span>Indice actual</span>
+            <strong id="planIndex">-</strong>
+          </div>
+          <div class="plan-card">
+            <span>Importacion</span>
+            <strong id="planImportacion">-</strong>
+          </div>
+        </div>
+        <div class="plan-summary">
+          <div class="plan-card">
+            <span>Proveedor</span>
+            <strong id="planProveedor">-</strong>
+          </div>
+          <div class="plan-card">
+            <span>Factura</span>
+            <strong id="planFactura">-</strong>
+          </div>
+          <div class="plan-card">
+            <span>Categoria objetivo</span>
+            <strong id="planCategoria">-</strong>
+          </div>
+          <div class="plan-card">
+            <span>Confianza</span>
+            <strong id="planConfianza">-</strong>
           </div>
         </div>
       </section>
@@ -213,6 +292,7 @@
         <button id="btnOpenSri" class="secondary">Abrir SRI</button>
         <button id="btnLoggedIn">Ya inicie sesion (continuar)</button>
         <button id="btnGoto" class="secondary">Ir a URL (manual)</button>
+        <button id="btnLoadPlan" class="secondary">Cargar plan</button>
         <button id="btnEventOk">Enviar evento OK</button>
       </section>
 
