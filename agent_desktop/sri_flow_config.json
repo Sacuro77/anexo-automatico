@@ -1,7 +1,16 @@
 {
   "_comment": "Reemplace los selectores y pasos con los reales del SRI.",
   "target_url_login": "https://srienlinea.sri.gob.ec",
-"provider_open": {
+  "debug_table_steps_sample": {
+    "steps": [
+      {
+        "type": "assertOnPage",
+        "urlPattern": "anexo-gastos-personales|anexos\\.jsf",
+        "anyText": ["Anexos"]
+      }
+    ]
+  },
+  "provider_open": {
   "steps": [
     {
       "type": "ensureSidebarOpen",
