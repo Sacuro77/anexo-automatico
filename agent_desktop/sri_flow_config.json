@@ -1,0 +1,30 @@
+{
+  "_comment": "Reemplace los selectores y pasos con los reales del SRI.",
+  "target_url_login": "https://srienlinea.sri.gob.ec",
+  "provider_open": {
+    "steps": [
+      { "type": "goto", "url": "{{target_url_login}}" },
+      { "type": "click", "selector": "REEMPLAZAR_SELECTOR_MENU_PROVEEDOR" },
+      { "type": "fill", "selector": "REEMPLAZAR_SELECTOR_RUC", "text": "{{proveedor_ruc}}" },
+      { "type": "click", "selector": "REEMPLAZAR_SELECTOR_BUSCAR" }
+    ]
+  },
+  "invoice_open": {
+    "steps": [
+      { "type": "fill", "selector": "REEMPLAZAR_SELECTOR_CLAVE", "text": "{{clave_acceso}}" },
+      { "type": "click", "selector": "REEMPLAZAR_SELECTOR_ABRIR_FACTURA" }
+    ]
+  },
+  "apply": {
+    "steps_before_confirm": [
+      { "type": "waitForSelector", "selector": "REEMPLAZAR_SELECTOR_FORM" }
+    ],
+    "category_selector": "REEMPLAZAR_SELECTOR_CATEGORIA",
+    "category_mode": "select",
+    "category_map": {
+      "123": { "value": "123" },
+      "Categoria Ejemplo": { "label": "Categoria Ejemplo" }
+    },
+    "confirm_selector": "REEMPLAZAR_SELECTOR_GUARDAR"
+  }
+}
