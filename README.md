@@ -24,6 +24,27 @@ Micro-SaaS para automatizar anexos. Proyecto Django preparado para desarrollo lo
 - Landing:
   - `http://localhost:8000/`
 
+## Agent CLI (Fase 2.2.1)
+Cliente mínimo para ejecutar el plan por proveedor y registrar eventos por factura.
+
+Requisitos:
+- Python 3.10+
+- `pip install -r agent_cli/requirements.txt`
+
+Ejemplo PowerShell:
+```powershell
+$env:AGENT_BASE_URL="http://localhost:8000"
+$env:AGENT_TOKEN="TOKEN_DEL_SAAS"
+$env:IMPORTACION_ID="1"
+# opcional: $env:AGENT_DRY_RUN="1"
+python agent_cli/main.py
+```
+
+Opciones del flujo:
+- `a` = aplicar todas las facturas del proveedor (si todas son HIGH y misma categoría)
+- `y` = aplicar la factura actual
+- `Enter` / `n` = saltar factura
+
 ## Agent CLI (Fase 2.2)
 Cliente mínimo para consumir la API del agente y registrar eventos simulados.
 
