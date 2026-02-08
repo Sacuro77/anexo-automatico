@@ -120,6 +120,128 @@
         gap: 12px;
       }
 
+      .telemetry {
+        display: grid;
+        gap: 12px;
+      }
+
+      .telemetry h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        color: #2e3a44;
+      }
+
+      .telemetry-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+      }
+
+      .telemetry-card {
+        background: #f4f7fb;
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid #d7e0ea;
+        display: grid;
+        gap: 8px;
+      }
+
+      .telemetry-card span {
+        font-size: 0.8rem;
+        color: #5a6874;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .telemetry-card pre {
+        min-height: 90px;
+        padding: 12px;
+        border-radius: 10px;
+        background: #0f1b24;
+        color: #d9f5ff;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        font-size: 0.78rem;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 27, 36, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .modal.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      .modal-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 20px;
+        max-width: 420px;
+        width: 100%;
+        display: grid;
+        gap: 12px;
+        box-shadow: 0 20px 40px rgba(15, 27, 36, 0.2);
+      }
+
+      .modal-card h3 {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+
+      .modal-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .plan {
+        display: grid;
+        gap: 12px;
+      }
+
+      .plan h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        color: #2e3a44;
+      }
+
+      .plan-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
+      .plan-card {
+        background: #f9fbff;
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid #d7e0ea;
+        display: grid;
+        gap: 6px;
+      }
+
+      .plan-card span {
+        font-size: 0.8rem;
+        color: #5a6874;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .plan-card strong {
+        font-size: 0.95rem;
+        color: #0f1b24;
+        word-break: break-word;
+      }
+
       button {
         border: none;
         padding: 12px 14px;
@@ -202,8 +324,48 @@
             <strong id="statusLogin">-</strong>
           </div>
           <div class="status-card">
+            <span>Token</span>
+            <strong id="statusToken">-</strong>
+          </div>
+          <div class="status-card">
             <span>URL</span>
             <strong id="statusUrl">-</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="plan">
+        <h2>Plan</h2>
+        <div class="plan-summary">
+          <div class="plan-card">
+            <span>Acciones</span>
+            <strong id="planCount">-</strong>
+          </div>
+          <div class="plan-card">
+            <span>Indice actual</span>
+            <strong id="planIndex">-</strong>
+          </div>
+          <div class="plan-card">
+            <span>Importacion</span>
+            <strong id="planImportacion">-</strong>
+          </div>
+        </div>
+        <div class="plan-summary">
+          <div class="plan-card">
+            <span>Proveedor</span>
+            <strong id="planProveedor">-</strong>
+          </div>
+          <div class="plan-card">
+            <span>Factura</span>
+            <strong id="planFactura">-</strong>
+          </div>
+          <div class="plan-card">
+            <span>Categoria objetivo</span>
+            <strong id="planCategoria">-</strong>
+          </div>
+          <div class="plan-card">
+            <span>Confianza</span>
+            <strong id="planConfianza">-</strong>
           </div>
         </div>
       </section>
@@ -213,10 +375,43 @@
         <button id="btnOpenSri" class="secondary">Abrir SRI</button>
         <button id="btnLoggedIn">Ya inicie sesion (continuar)</button>
         <button id="btnGoto" class="secondary">Ir a URL (manual)</button>
+        <button id="btnLoadPlan" class="secondary">Cargar plan</button>
         <button id="btnEventOk">Enviar evento OK</button>
       </section>
 
+      <section class="actions">
+        <button id="btnProviderOpen">Ir a proveedor</button>
+        <button id="btnInvoiceOpen" class="secondary">Abrir factura</button>
+        <button id="btnApplyCategory">Aplicar categoria (1)</button>
+      </section>
+
+      <section class="telemetry">
+        <h2>Telemetria</h2>
+        <div class="telemetry-grid">
+          <div class="telemetry-card">
+            <span>Ultimo evento</span>
+            <pre id="lastEvent">-</pre>
+          </div>
+          <div class="telemetry-card">
+            <span>Ultimo error</span>
+            <pre id="lastError">-</pre>
+            <button id="btnCopyError" class="secondary">Copiar detalle</button>
+          </div>
+        </div>
+      </section>
+
       <pre id="logs">Ready.</pre>
+    </div>
+
+    <div id="confirmModal" class="modal">
+      <div class="modal-card">
+        <h3>Confirmar</h3>
+        <p id="confirmMessage">Confirmar accion</p>
+        <div class="modal-actions">
+          <button id="btnConfirmCancel" class="secondary">Cancelar</button>
+          <button id="btnConfirmApply">Confirmar</button>
+        </div>
+      </div>
     </div>
 
     <script src="renderer.js"></script>

@@ -4,7 +4,8 @@
   "private": true,
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "test": "node tests/plan_runner.test.js"
   },
   "dependencies": {
     "electron": "^30.0.0",
