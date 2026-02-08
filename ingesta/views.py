@@ -1,6 +1,9 @@
+import csv
+
 from django.contrib import messages
 from django.db.models import Count, F, Q, Value
 from django.db.models.functions import Coalesce
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -141,6 +144,73 @@ def importacion_detail(request, importacion_id: int):
             "resumen_por_categoria": resumen_por_categoria,
         },
     )
+
+
+def importacion_export_csv(request, importacion_id: int):
+    importacion = get_object_or_404(Importacion, id=importacion_id)
+    file_logs = (importacion.log_json or {}).get("files", [])
+    factura_ids: list[int] = []
+    factura_seen: set[int] = set()
+    for entry in file_logs:
+        factura_id = entry.get("factura_id")
+        if factura_id and factura_id not in factura_seen:
+            factura_ids.append(factura_id)
+            factura_seen.add(factura_id)
+    if not factura_ids:
+        s3_keys: list[str] = []
+        for entry in file_logs:
+            key = entry.get("s3_key_xml") or entry.get("s3_key")
+            if key:
+                s3_keys.append(key)
+        if s3_keys:
+            factura_ids = list(
+                ArchivoFactura.objects.filter(s3_key_xml__in=s3_keys)
+                .values_list("factura_id", flat=True)
+                .distinct()
+            )
+    max_facturas = 50
+    factura_ids = factura_ids[:max_facturas]
+    facturas = (
+        Factura.objects.filter(id__in=factura_ids)
+        .select_related("proveedor")
+        .order_by()
+    )
+    facturas_by_id = {factura.id: factura for factura in facturas}
+    asignaciones = (
+        AsignacionClasificacionFactura.objects.filter(factura_id__in=factura_ids)
+        .select_related("factura__proveedor", "categoria_sugerida")
+        .order_by()
+    )
+    asignaciones_by_id = {asignacion.factura_id: asignacion for asignacion in asignaciones}
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = (
+        f'attachment; filename="importacion-{importacion.id}-checklist.csv"'
+    )
+    writer = csv.writer(response)
+    writer.writerow(
+        ["ruc", "razon_social", "clave_acceso", "categoria_sugerida", "confianza"]
+    )
+    for factura_id in factura_ids:
+        factura = facturas_by_id.get(factura_id)
+        if not factura:
+            continue
+        asignacion = asignaciones_by_id.get(factura_id)
+        categoria = "Sin categoría"
+        if asignacion and asignacion.categoria_sugerida:
+            categoria = asignacion.categoria_sugerida.nombre
+        confianza = "-"
+        if asignacion and asignacion.confianza:
+            confianza = asignacion.confianza
+        writer.writerow(
+            [
+                factura.proveedor.ruc,
+                factura.proveedor.razon_social or "",
+                factura.clave_acceso,
+                categoria,
+                confianza,
+            ]
+        )
+    return response
 
 
 def revisar(request):
