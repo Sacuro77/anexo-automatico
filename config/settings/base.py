@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "core",
     "ingesta",
     "billing",
+    "agente",
 ]
 
 MIDDLEWARE = [
