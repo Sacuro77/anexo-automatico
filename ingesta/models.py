@@ -75,3 +75,78 @@ class ArchivoFactura(models.Model):
 
     def __str__(self) -> str:
         return f"{self.factura_id} -> {self.s3_key_xml}"
+
+
+class Categoria(models.Model):
+    nombre = models.CharField(max_length=120)
+    codigo = models.CharField(max_length=32, blank=True)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self) -> str:
+        if self.codigo:
+            return f"{self.nombre} ({self.codigo})"
+        return self.nombre
+
+
+class Confianza(models.TextChoices):
+    HIGH = "HIGH", "High"
+    MEDIUM = "MEDIUM", "Medium"
+    LOW = "LOW", "Low"
+
+
+class ReglaClasificacion(models.Model):
+    class Tipo(models.TextChoices):
+        RUC = "RUC", "RUC"
+        KEYWORD = "KEYWORD", "Keyword"
+
+    prioridad = models.IntegerField(default=100)
+    tipo = models.CharField(max_length=10, choices=Tipo.choices)
+    patron = models.CharField(max_length=255)
+    categoria = models.ForeignKey(
+        Categoria,
+        on_delete=models.PROTECT,
+        related_name="reglas",
+    )
+    confianza_base = models.CharField(
+        max_length=10,
+        choices=Confianza.choices,
+        default=Confianza.MEDIUM,
+    )
+    activo = models.BooleanField(default=True)
+
+    def __str__(self) -> str:
+        return f"{self.tipo}:{self.patron} -> {self.categoria}"
+
+
+class AsignacionClasificacionFactura(models.Model):
+    class Metodo(models.TextChoices):
+        AUTO = "AUTO", "Auto"
+        MANUAL = "MANUAL", "Manual"
+
+    factura = models.OneToOneField(
+        Factura,
+        on_delete=models.CASCADE,
+        related_name="clasificacion",
+    )
+    categoria_sugerida = models.ForeignKey(
+        Categoria,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="asignaciones",
+    )
+    confianza = models.CharField(
+        max_length=10,
+        choices=Confianza.choices,
+        default=Confianza.LOW,
+    )
+    razones = models.JSONField(default=list)
+    metodo = models.CharField(
+        max_length=10,
+        choices=Metodo.choices,
+        default=Metodo.AUTO,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{self.factura_id} -> {self.categoria_sugerida_id or 'sin categoria'}"
