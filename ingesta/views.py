@@ -70,12 +70,7 @@ def importacion_list(request):
 
 def importacion_detail(request, importacion_id: int):
     importacion = get_object_or_404(Importacion, id=importacion_id)
-    from agente.models import AgentEvent
-
-    agent_events = (
-        AgentEvent.objects.filter(importacion_id=importacion.id)
-        .order_by("-created_at")[:50]
-    )
+    agent_events = importacion.agent_events.order_by("-created_at")[:50]
     file_logs = (importacion.log_json or {}).get("files", [])
     factura_ids: list[int] = []
     factura_seen: set[int] = set()
