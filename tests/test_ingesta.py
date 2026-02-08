@@ -1,4 +1,5 @@
 import io
+import json
 import re
 import zipfile
 
@@ -323,6 +324,44 @@ def test_importacion_export_csv(client):
     assert "Sin categoría" in content
     assert "CLAVE-CSV-1" in content
     assert "CLAVE-CSV-2" in content
+
+
+@pytest.mark.django_db
+def test_importacion_export_plan_json(client):
+    proveedor = Proveedor.objects.create(ruc="888", razon_social="Proveedor Plan")
+    factura_uno = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-PLAN-1")
+    factura_dos = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-PLAN-2")
+    categoria = Categoria.objects.create(nombre="SALUD")
+    AsignacionClasificacionFactura.objects.create(
+        factura=factura_uno,
+        categoria_sugerida=categoria,
+        confianza=Confianza.HIGH,
+    )
+    AsignacionClasificacionFactura.objects.create(
+        factura=factura_dos,
+        categoria_sugerida=None,
+        confianza=Confianza.LOW,
+    )
+    importacion = Importacion.objects.create(
+        log_json={
+            "files": [
+                {"factura_id": factura_uno.id},
+                {"factura_id": factura_dos.id},
+            ]
+        }
+    )
+
+    response = client.get(f"/ingesta/importaciones/{importacion.id}/plan.json")
+
+    assert response.status_code == 200
+    assert "application/json" in response["Content-Type"]
+    payload = json.loads(response.content.decode("utf-8"))
+    assert payload["total_items"] == 1
+    assert payload["acciones"][0]["categoria_nombre"] == "SALUD"
+    assert payload["acciones"][0]["factura_id"] == factura_uno.id
+    assert all(
+        item["factura_id"] != factura_dos.id for item in payload["acciones"]
+    )
 
 
 @pytest.mark.django_db
