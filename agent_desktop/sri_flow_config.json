@@ -2,23 +2,38 @@
   "_comment": "Reemplace los selectores y pasos con los reales del SRI.",
   "target_url_login": "https://srienlinea.sri.gob.ec",
   "provider_open": {
-    "steps": [
-      { "type": "goto", "url": "{{target_url_login}}" },
-      { "type": "click", "selector": "button#sri-menu" },
-      {
-        "type": "waitForSelector",
-        "selector": "#mySidebar[style*='display: block'], #mySidebar2[style*='display: block']"
-      },
-      {
-        "type": "click",
-        "selector": "#mySidebar span.ui-menuitem-text:has-text('ANEXOS'), #mySidebar2 span.ui-menuitem-text:has-text('ANEXOS')"
-      },
-      {
-        "type": "click",
-        "selector": "#mySidebar a.ui-menuitem-link:has(span.ui-menuitem-text:has-text('Generación anexo')), #mySidebar2 a.ui-menuitem-link:has(span.ui-menuitem-text:has-text('Generación anexo'))"
-      }
-    ]
-  },
+  "steps": [
+    { "type": "goto", "url": "{{target_url_login}}" },
+
+    {
+      "type": "ensureSidebarOpen",
+      "hamburger": "button#sri-menu",
+      "sidebarVisible": "#mySidebar[style*='display: block'], #mySidebar2[style*='display: block']"
+    },
+
+    {
+      "type": "click",
+      "selector": "#mySidebar[style*='display: block'] span.ui-menuitem-text:has-text('ANEXOS'), #mySidebar2[style*='display: block'] span.ui-menuitem-text:has-text('ANEXOS')"
+    },
+
+    {
+      "type": "click",
+      "selector": "#mySidebar[style*='display: block'] a.ui-menuitem-link:has(span.ui-menuitem-text:has-text('Generación anexo')), #mySidebar2[style*='display: block'] a.ui-menuitem-link:has(span.ui-menuitem-text:has-text('Generación anexo'))"
+    },
+
+    {
+      "type": "waitForURL",
+      "pattern": "accederAplicacion\\.jspa",
+      "timeout": 20000
+    },
+    {
+      "type": "waitForURL",
+      "pattern": "anexo-gastos-personales|anexos\\.jsf",
+      "timeout": 60000
+    }
+  ]
+},
+
   "invoice_open": {
     "steps": [
       { "type": "fill", "selector": "REEMPLAZAR_SELECTOR_CLAVE", "text": "{{clave_acceso}}" },
