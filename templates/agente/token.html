@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Token generado</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f7f7fb;
+        color: #111;
+        margin: 0;
+        padding: 0;
+      }
+      main {
+        max-width: 760px;
+        margin: 40px auto;
+        padding: 0 20px 60px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+      }
+      pre {
+        background: #111827;
+        color: #f9fafb;
+        padding: 16px;
+        border-radius: 10px;
+        overflow-x: auto;
+      }
+      a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .notice {
+        color: #6b7280;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="card">
+        <h1>Token generado</h1>
+        <p class="notice">
+          Guarda este token ahora. Por seguridad, solo se muestra una vez.
+        </p>
+        <pre>{{ token }}</pre>
+        <p class="notice">Expira: {{ expires_at }}</p>
+        <p>
+          <a href="{% url 'ingesta-detail' importacion.id %}">Volver a la importación</a>
+        </p>
+      </div>
+    </main>
+  </body>
+</html>

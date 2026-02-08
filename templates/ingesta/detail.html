@@ -49,6 +49,15 @@
         color: #2563eb;
         text-decoration: none;
       }
+      button {
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+      }
       .notice {
         margin: 8px 0 16px;
         color: #6b7280;
@@ -105,6 +114,11 @@
           · <a href="{% url 'ingesta-revisar' %}">Revisar sugerencias</a>
           · <a href="{% url 'ingesta-export-csv' importacion.id %}">Descargar CSV</a>
           · <a href="{% url 'ingesta-export-plan-json' importacion.id %}">Descargar plan (JSON)</a>
+          ·
+          <form method="post" action="{% url 'agente-generate-token' importacion.id %}" style="display: inline">
+            {% csrf_token %}
+            <button type="submit">Generar token para agente</button>
+          </form>
         </p>
         <dl>
           <dt>Estado</dt>
