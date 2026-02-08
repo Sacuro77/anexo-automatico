@@ -100,6 +100,13 @@
         color: #15803d;
         font-weight: 600;
       }
+      .truncate {
+        max-width: 320px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+      }
     </style>
   </head>
   <body>
@@ -210,6 +217,39 @@
           </table>
         {% elif not fallback_message %}
           <p class="notice">Sin sugerencias aún.</p>
+        {% endif %}
+        <h2>Eventos del agente</h2>
+        {% if agent_events %}
+          <table class="table-compact">
+            <thead>
+              <tr>
+                <th>Creado</th>
+                <th>TS evento</th>
+                <th>Paso</th>
+                <th>Estado</th>
+                <th>Factura</th>
+                <th>Mensaje</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for event in agent_events %}
+                <tr>
+                  <td>{{ event.created_at }}</td>
+                  <td>{{ event.event_ts|default:"-" }}</td>
+                  <td>{{ event.step }}</td>
+                  <td>{{ event.status }}</td>
+                  <td>{{ event.factura_id|default:"-" }}</td>
+                  <td>
+                    <span class="truncate" title="{{ event.message|default:"" }}">
+                      {{ event.message|default:"-" }}
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="notice">Sin eventos aún.</p>
         {% endif %}
         <h2>Log</h2>
         <pre>{{ importacion.log_json|default:""|pprint }}</pre>

@@ -2,11 +2,14 @@ import io
 import json
 import re
 import zipfile
+from datetime import timedelta
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
+from agente.models import AgentEvent, AgentToken
 from ingesta.models import (
     ArchivoFactura,
     AsignacionClasificacionFactura,
@@ -287,6 +290,33 @@ def test_importacion_detail_resumen_por_categoria(client):
     assert "Resumen por categoría" in content
     assert re.search(r"SALUD\s*</td>\s*<td[^>]*>\s*2\s*</td>", content)
     assert re.search(r"Sin categoría\s*</td>\s*<td[^>]*>\s*1\s*</td>", content)
+
+
+@pytest.mark.django_db
+def test_importacion_detail_muestra_eventos_agente(client):
+    importacion = Importacion.objects.create()
+    token = AgentToken.objects.create(
+        token_hash="a" * 64,
+        expires_at=timezone.now() + timedelta(hours=1),
+    )
+    AgentEvent.objects.create(
+        token=token,
+        importacion=importacion,
+        step="apply",
+        status="ok",
+        factura_id=123,
+        message="logged",
+    )
+
+    response = client.get(f"/ingesta/importaciones/{importacion.id}/")
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "Eventos del agente" in content
+    assert "apply" in content
+    assert "ok" in content
+    assert "123" in content
+    assert "logged" in content
 
 
 @pytest.mark.django_db
