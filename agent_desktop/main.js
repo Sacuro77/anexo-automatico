@@ -210,6 +210,111 @@ async function runStepSequence(steps, context, options = {}) {
         requireValue(step.selector, "step.selector");
         await page.click(step.selector, { timeout });
         break;
+      case "clickAny": {
+        if (!Array.isArray(step.selectors) || step.selectors.length === 0) {
+          throw new Error("step.selectors must be a non-empty array.");
+        }
+        const timeout = step.timeout ?? 30000;
+        let clicked = false;
+
+        for (const selector of step.selectors) {
+          const locator = page.locator(selector).first();
+          let count = 0;
+          let isVisible = false;
+          let isEnabled = false;
+          let box;
+          try {
+            count = await locator.count();
+            if (count > 0) {
+              isVisible = await locator.isVisible();
+              isEnabled = await locator.isEnabled();
+              try {
+                const measured = await locator.boundingBox();
+                if (measured !== null) {
+                  box = measured;
+                }
+              } catch (_boxError) {
+                // Keep previous box if any; don't overwrite with null.
+              }
+            }
+          } catch (probeError) {
+            count = 0;
+          }
+          console.log(
+            `[clickAny] trying: ${selector} | count=${count} | visible=${isVisible} | enabled=${isEnabled} | box=${box !== undefined ? JSON.stringify(box) : "unavailable"}`
+          );
+          if (!count || !isEnabled) {
+            continue;
+          }
+
+          try {
+            await locator.scrollIntoViewIfNeeded({ timeout });
+          } catch (scrollError) {
+            const detail =
+              scrollError && (scrollError.name || scrollError.message)
+                ? scrollError.name || scrollError.message
+                : String(scrollError);
+            console.log(`[clickAny] scroll failed: ${selector} - ${detail}`);
+          }
+
+          try {
+            if (!isVisible) {
+              console.log(`[clickAny] not visible, attempting force click: ${selector}`);
+            }
+            await locator.click({ timeout, force: true });
+            console.log(`[clickAny] clicked via locator.click: ${selector}`);
+            if (step.logUrlAfter) {
+              console.log(`[clickAny] url(after)=${page.url()}`);
+            }
+            clicked = true;
+            break;
+          } catch (error) {
+            const detail =
+              error && (error.name || error.message)
+                ? error.name || error.message
+                : String(error);
+            console.log(`[clickAny] click failed: ${selector} - ${detail}`);
+          }
+
+          try {
+            await locator.evaluate((el) => el.click());
+            console.log(`[clickAny] clicked via evaluate: ${selector}`);
+            if (step.logUrlAfter) {
+              console.log(`[clickAny] url(after)=${page.url()}`);
+            }
+            clicked = true;
+            break;
+          } catch (error) {
+            const detail =
+              error && (error.name || error.message)
+                ? error.name || error.message
+                : String(error);
+            console.log(`[clickAny] evaluate failed: ${selector} - ${detail}`);
+          }
+
+          try {
+            await locator.dispatchEvent("click");
+            console.log(`[clickAny] clicked via dispatchEvent: ${selector}`);
+            if (step.logUrlAfter) {
+              console.log(`[clickAny] url(after)=${page.url()}`);
+            }
+            clicked = true;
+            break;
+          } catch (error) {
+            const detail =
+              error && (error.name || error.message)
+                ? error.name || error.message
+                : String(error);
+            console.log(`[clickAny] dispatchEvent failed: ${selector} - ${detail}`);
+          }
+        }
+
+        if (!clicked) {
+          throw new Error(`clickAny: none worked: ${JSON.stringify(step.selectors)}`);
+        }
+
+        break;
+      }
       case "fill":
         requireValue(step.selector, "step.selector");
         requireValue(step.text, "step.text");
@@ -260,21 +365,61 @@ async function runStepSequence(steps, context, options = {}) {
         break;
       case "ensureSidebarOpen": {
         requireValue(step.hamburger, "step.hamburger");
-        requireValue(step.sidebarVisible, "step.sidebarVisible");
-        const probeTimeout = Math.min(1000, timeout);
-        const alreadyVisible = await page
-          .waitForSelector(step.sidebarVisible, { timeout: probeTimeout, state: "visible" })
-          .then(() => true)
+
+        // IDs reales del SRI (según tus capturas)
+        const sidebar1 = step.sidebar1 || "#mySidebar";
+        const sidebar2 = step.sidebar2 || "#mySidebar2";
+        const minWidth = 200;
+
+        console.log(`[step_runner] ensureSidebarOpen url(before)=${page.url()}`);
+        const alreadyOpen = await page
+          .evaluate(({ s1, s2, minW }) => {
+            const read = (sel) => {
+              const el = document.querySelector(sel);
+              if (!el) {
+                return { display: null, width: 0 };
+              }
+              return {
+                display: window.getComputedStyle(el).display,
+                width: el.getBoundingClientRect().width
+              };
+            };
+            const info1 = read(s1);
+            const info2 = read(s2);
+            const open1 = info1.display && info1.display !== "none" && info1.width >= minW;
+            const open2 = info2.display && info2.display !== "none" && info2.width >= minW;
+            return Boolean(open1 || open2);
+          }, { s1: sidebar1, s2: sidebar2, minW: minWidth })
           .catch(() => false);
-        if (alreadyVisible) {
-          console.log("[step_runner] sidebar already open");
+        if (alreadyOpen) {
+          console.log("[step_runner] sidebar already open (computed style)");
           break;
         }
+
+        // Click al hamburguesa (toggle)
         await page.click(step.hamburger, { timeout });
-        await page.waitForSelector(step.sidebarVisible, { timeout, state: "visible" });
-        console.log("[step_runner] opened sidebar via hamburger");
+
+        // Esperar a que alguno quede visible por computed style y ancho suficiente
+        await page.waitForFunction(
+          ({ s1, s2, minW }) => {
+            const el1 = document.querySelector(s1);
+            const el2 = document.querySelector(s2);
+            const v1 = el1 && window.getComputedStyle(el1).display !== "none";
+            const v2 = el2 && window.getComputedStyle(el2).display !== "none";
+            const w1 = el1 ? el1.getBoundingClientRect().width : 0;
+            const w2 = el2 ? el2.getBoundingClientRect().width : 0;
+            return Boolean((v1 && w1 >= minW) || (v2 && w2 >= minW));
+          },
+          { s1: sidebar1, s2: sidebar2, minW: minWidth },
+          { timeout }
+        );
+
+        console.log(`[step_runner] ensureSidebarOpen url(after)=${page.url()}`);
+        console.log("[step_runner] sidebar opened (computed style)");
         break;
       }
+
+
       default:
         throw new Error(`Tipo de step no soportado: ${stepType}`);
     }
@@ -572,24 +717,40 @@ ipcMain.handle("agent:providerOpen", async (_event, payload) => {
   const currentAction = getCurrentAction(state.plan, state.planIndex) || {};
   const proveedorLabel =
     currentAction.proveedor_ruc || currentAction.proveedor_id || "N/A";
-  return runStep(
-    {
-      baseUrl,
-      token,
-      importacionId,
-      step: "provider_open",
-      message: `Proveedor abierto (${proveedorLabel}).`
-    },
-    async () => {
-      const action = ensureAssistedPreconditions();
-      const config = await requireConfigForAction("provider_open");
-      const result = await runProviderOpen(config, action);
-      return {
-        snapshot: getStateSnapshot(),
-        logs: result.logs
-      };
-    }
-  );
+  try {
+    return await runStep(
+      {
+        baseUrl,
+        token,
+        importacionId,
+        step: "provider_open",
+        message: `Proveedor abierto (${proveedorLabel}).`
+      },
+      async () => {
+        const action = ensureAssistedPreconditions();
+        const config = await requireConfigForAction("provider_open");
+        const result = await runProviderOpen(config, action);
+        return {
+          snapshot: getStateSnapshot(),
+          logs: result?.logs ?? []
+        };
+      }
+    );
+  } catch (error) {
+    const url = state.page ? state.page.url() : null;
+    const errorMessage = error && error.message ? error.message : String(error);
+    const fullError = url ? `${errorMessage} | url=${url}` : errorMessage;
+    return {
+      result: {
+        ok: false,
+        step: "provider_open",
+        error: fullError,
+        logs: []
+      },
+      event: null,
+      eventPayload: null
+    };
+  }
 });
 
 ipcMain.handle("agent:invoiceOpen", async (_event, payload) => {
@@ -598,25 +759,41 @@ ipcMain.handle("agent:invoiceOpen", async (_event, payload) => {
   const facturaLabel =
     currentAction.clave_acceso || currentAction.factura_id || "N/A";
   const eventExtra = currentAction.factura_id ? { factura_id: currentAction.factura_id } : {};
-  return runStep(
-    {
-      baseUrl,
-      token,
-      importacionId,
-      step: "invoice_open",
-      message: `Factura abierta (${facturaLabel}).`,
-      eventExtra
-    },
-    async () => {
-      const action = ensureAssistedPreconditions();
-      const config = await requireConfigForAction("invoice_open");
-      const result = await runInvoiceOpen(config, action);
-      return {
-        snapshot: getStateSnapshot(),
-        logs: result.logs
-      };
-    }
-  );
+  try {
+    return await runStep(
+      {
+        baseUrl,
+        token,
+        importacionId,
+        step: "invoice_open",
+        message: `Factura abierta (${facturaLabel}).`,
+        eventExtra
+      },
+      async () => {
+        const action = ensureAssistedPreconditions();
+        const config = await requireConfigForAction("invoice_open");
+        const result = await runInvoiceOpen(config, action);
+        return {
+          snapshot: getStateSnapshot(),
+          logs: result?.logs ?? []
+        };
+      }
+    );
+  } catch (error) {
+    const url = state.page ? state.page.url() : null;
+    const errorMessage = error && error.message ? error.message : String(error);
+    const fullError = url ? `${errorMessage} | url=${url}` : errorMessage;
+    return {
+      result: {
+        ok: false,
+        step: "invoice_open",
+        error: fullError,
+        logs: []
+      },
+      event: null,
+      eventPayload: null
+    };
+  }
 });
 
 ipcMain.handle("agent:applyPrepare", async (_event, payload) => {
