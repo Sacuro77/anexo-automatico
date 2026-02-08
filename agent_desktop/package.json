@@ -1,0 +1,13 @@
+{
+  "name": "agent-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": "^30.0.0",
+    "playwright": "^1.47.0"
+  }
+}
