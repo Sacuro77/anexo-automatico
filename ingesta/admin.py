@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import ArchivoFactura, Factura, Importacion, Proveedor
+from .models import (
+    ArchivoFactura,
+    AsignacionClasificacionFactura,
+    Categoria,
+    Factura,
+    Importacion,
+    Proveedor,
+    ReglaClasificacion,
+)
 
 
 @admin.register(Importacion)
@@ -44,3 +52,24 @@ class FacturaAdmin(admin.ModelAdmin):
 class ArchivoFacturaAdmin(admin.ModelAdmin):
     list_display = ("factura", "s3_key_xml", "created_at")
     search_fields = ("s3_key_xml", "factura__clave_acceso")
+
+
+@admin.register(Categoria)
+class CategoriaAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "codigo", "activo")
+    search_fields = ("nombre", "codigo")
+    list_filter = ("activo",)
+
+
+@admin.register(ReglaClasificacion)
+class ReglaClasificacionAdmin(admin.ModelAdmin):
+    list_display = ("tipo", "patron", "categoria", "prioridad", "confianza_base", "activo")
+    list_filter = ("tipo", "confianza_base", "activo")
+    search_fields = ("patron", "categoria__nombre")
+
+
+@admin.register(AsignacionClasificacionFactura)
+class AsignacionClasificacionFacturaAdmin(admin.ModelAdmin):
+    list_display = ("factura", "categoria_sugerida", "confianza", "metodo", "updated_at")
+    list_filter = ("confianza", "metodo")
+    search_fields = ("factura__clave_acceso", "factura__proveedor__ruc")

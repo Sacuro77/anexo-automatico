@@ -10,6 +10,10 @@ from django.db import transaction
 from django.utils import timezone
 
 from ingesta.models import ArchivoFactura, Factura, Importacion, Proveedor
+from ingesta.services.classification import (
+    classify_factura,
+    upsert_asignacion_factura,
+)
 from ingesta.services.parser_xml import parse_xml_bytes
 from ingesta.services.s3_client import download_bytes, ensure_bucket, upload_xml
 
@@ -132,12 +136,22 @@ def process_zip_import(importacion_id: int) -> None:
                         factura=factura,
                         defaults={"s3_key_xml": xml_key, "sha256_xml": xml_sha},
                     )
+                    categoria, confianza, razones = classify_factura(factura)
+                    upsert_asignacion_factura(
+                        factura,
+                        categoria,
+                        confianza,
+                        razones,
+                    )
 
                 file_logs.append(
                     {
                         "filename": info.filename,
                         "warnings": warnings,
                         "errors": [],
+                        "factura_id": factura.id,
+                        "clave_acceso": factura.clave_acceso,
+                        "s3_key_xml": xml_key,
                     }
                 )
 

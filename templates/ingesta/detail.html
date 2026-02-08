@@ -53,6 +53,34 @@
         margin: 8px 0 16px;
         color: #6b7280;
       }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+      }
+      th {
+        color: #374151;
+        font-weight: 600;
+      }
+      .badge-low {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+      .badge-medium {
+        color: #b45309;
+        font-weight: 600;
+      }
+      .badge-high {
+        color: #15803d;
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
@@ -62,7 +90,10 @@
         {% if importacion.status == "PENDING" or importacion.status == "RUNNING" %}
           <p class="notice">Procesando: esta página se actualizará automáticamente.</p>
         {% endif %}
-        <p><a href="{% url 'ingesta-index' %}">Volver</a></p>
+        <p>
+          <a href="{% url 'ingesta-index' %}">Volver</a>
+          · <a href="{% url 'ingesta-revisar' %}">Revisar sugerencias</a>
+        </p>
         <dl>
           <dt>Estado</dt>
           <dd>{{ importacion.status }}</dd>
@@ -85,6 +116,54 @@
           <dt>ZIP S3</dt>
           <dd>{{ importacion.s3_key_zip|default:"-" }}</dd>
         </dl>
+        <h2>Sugerencias de clasificación</h2>
+        <p class="notice">
+          {% if fallback_message %}
+            {{ fallback_message }}
+          {% else %}
+            Mostrando {{ factura_sugerencias|length }} de {{ factura_total }} (límite {{ factura_limit }}).
+          {% endif %}
+        </p>
+        {% if factura_sugerencias %}
+          <table>
+            <thead>
+              <tr>
+                <th>Clave acceso</th>
+                <th>RUC</th>
+                <th>Razón social</th>
+                <th>Categoría sugerida</th>
+                <th>Confianza</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in factura_sugerencias %}
+                <tr>
+                  <td>{{ item.factura.clave_acceso }}</td>
+                  <td>{{ item.factura.proveedor.ruc }}</td>
+                  <td>{{ item.factura.proveedor.razon_social|default:"-" }}</td>
+                  <td>
+                    {% if item.asignacion and item.asignacion.categoria_sugerida %}
+                      {{ item.asignacion.categoria_sugerida.nombre }}
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if item.asignacion %}
+                      <span class="badge-{{ item.asignacion.confianza|lower }}">
+                        {{ item.asignacion.confianza }}
+                      </span>
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% elif not fallback_message %}
+          <p class="notice">Sin sugerencias aún.</p>
+        {% endif %}
         <h2>Log</h2>
         <pre>{{ importacion.log_json|default:""|pprint }}</pre>
       </div>

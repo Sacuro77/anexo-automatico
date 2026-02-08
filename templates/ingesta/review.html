@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Revisión de clasificación</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f7f7fb;
+        color: #111;
+        margin: 0;
+        padding: 0;
+      }
+      main {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px 60px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+        vertical-align: top;
+      }
+      th {
+        color: #374151;
+        font-weight: 600;
+      }
+      .toolbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin: 12px 0 18px;
+      }
+      .toolbar input {
+        flex: 1;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+      }
+      .toolbar button {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 8px;
+        background: #2563eb;
+        color: #fff;
+        font-weight: 600;
+      }
+      .badge-low {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+      .badge-medium {
+        color: #b45309;
+        font-weight: 600;
+      }
+      .badge-high {
+        color: #15803d;
+        font-weight: 600;
+      }
+      a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .muted {
+        color: #6b7280;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="card">
+        <h1>Revisión de clasificación</h1>
+        <p><a href="{% url 'ingesta-index' %}">Volver</a></p>
+        <form class="toolbar" method="get">
+          <input
+            type="text"
+            name="q"
+            placeholder="Buscar por RUC, razón social o clave de acceso"
+            value="{{ query }}"
+          />
+          <button type="submit">Filtrar</button>
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th>Clave acceso</th>
+              <th>RUC</th>
+              <th>Razón social</th>
+              <th>Categoría</th>
+              <th>Confianza</th>
+              <th>Razones</th>
+              <th>Actualizado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for asignacion in asignaciones %}
+              <tr>
+                <td>{{ asignacion.factura.clave_acceso }}</td>
+                <td>{{ asignacion.factura.proveedor.ruc }}</td>
+                <td>{{ asignacion.factura.proveedor.razon_social|default:"-" }}</td>
+                <td>
+                  {% if asignacion.categoria_sugerida %}
+                    {{ asignacion.categoria_sugerida.nombre }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge-{{ asignacion.confianza|lower }}">
+                    {{ asignacion.confianza }}
+                  </span>
+                </td>
+                <td>
+                  {% if asignacion.razones %}
+                    {{ asignacion.razones|join:", " }}
+                  {% else %}
+                    <span class="muted">-</span>
+                  {% endif %}
+                </td>
+                <td>{{ asignacion.updated_at }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7">No hay facturas pendientes de revisión.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </body>
+</html>

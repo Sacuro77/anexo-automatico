@@ -5,8 +5,18 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 
-from ingesta.models import ArchivoFactura, Factura, Importacion, Proveedor
+from ingesta.models import (
+    ArchivoFactura,
+    AsignacionClasificacionFactura,
+    Categoria,
+    Confianza,
+    Factura,
+    Importacion,
+    Proveedor,
+    ReglaClasificacion,
+)
 from ingesta.services.parser_xml import parse_xml_bytes
+from ingesta.tasks import process_zip_import
 
 
 def _build_zip_bytes() -> bytes:
@@ -126,6 +136,27 @@ def test_parser_moneda_dolar_normaliza_usd():
     assert parsed.moneda == "USD"
 
 
+def _build_zip_with_factura(ruc: str, clave: str, razon_social: str) -> bytes:
+    xml = f"""
+    <factura>
+      <infoTributaria>
+        <ruc>{ruc}</ruc>
+        <razonSocial>{razon_social}</razonSocial>
+        <claveAcceso>{clave}</claveAcceso>
+      </infoTributaria>
+      <infoFactura>
+        <fechaEmision>01/01/2024</fechaEmision>
+        <totalSinImpuestos>10.00</totalSinImpuestos>
+        <importeTotal>11.20</importeTotal>
+      </infoFactura>
+    </factura>
+    """.strip().encode("utf-8")
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        zf.writestr("factura.xml", xml)
+    return buffer.getvalue()
+
+
 @pytest.mark.django_db
 def test_constraints_unique():
     Proveedor.objects.create(ruc="999")
@@ -148,3 +179,93 @@ def test_constraints_unique():
                 factura=otro,
                 s3_key_xml="ruc/CLAVE2.xml",
             )
+
+
+@pytest.mark.django_db
+def test_importacion_crea_asignacion_clasificacion(monkeypatch):
+    categoria = Categoria.objects.create(nombre="Farmacia")
+    ReglaClasificacion.objects.create(
+        prioridad=1,
+        tipo=ReglaClasificacion.Tipo.RUC,
+        patron="1790012345001",
+        categoria=categoria,
+        confianza_base=Confianza.HIGH,
+    )
+    zip_bytes = _build_zip_with_factura(
+        ruc="1790012345001",
+        clave="CLAVE-IMPORT-001",
+        razon_social="Farmacia Central",
+    )
+    importacion = Importacion.objects.create(s3_key_zip="imports/1/source.zip")
+
+    monkeypatch.setattr("ingesta.tasks.ensure_bucket", lambda: None)
+    monkeypatch.setattr("ingesta.tasks.download_bytes", lambda _key: zip_bytes)
+    monkeypatch.setattr("ingesta.tasks.upload_xml", lambda *_args, **_kwargs: None)
+
+    process_zip_import(importacion.id)
+
+    assert AsignacionClasificacionFactura.objects.count() == 1
+    asignacion = AsignacionClasificacionFactura.objects.select_related("categoria_sugerida").first()
+    assert asignacion is not None
+    assert asignacion.categoria_sugerida == categoria
+
+
+@pytest.mark.django_db
+def test_importacion_detail_muestra_sugerencias_con_factura_id(client):
+    categoria = Categoria.objects.create(nombre="Servicios")
+    proveedor = Proveedor.objects.create(ruc="123", razon_social="Proveedor Demo")
+    factura = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-DET-1")
+    AsignacionClasificacionFactura.objects.create(
+        factura=factura,
+        categoria_sugerida=categoria,
+        confianza=Confianza.HIGH,
+    )
+    importacion = Importacion.objects.create(log_json={"files": [{"factura_id": factura.id}]})
+
+    response = client.get(f"/ingesta/importaciones/{importacion.id}/")
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "CLAVE-DET-1" in content
+    assert "Servicios" in content
+    assert "HIGH" in content
+
+
+@pytest.mark.django_db
+def test_importacion_detail_muestra_fallback_sin_factura_id(client):
+    importacion = Importacion.objects.create(log_json={"files": [{"filename": "factura.xml"}]})
+
+    response = client.get(f"/ingesta/importaciones/{importacion.id}/")
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert (
+        "Esta importación no contiene referencia a facturas (importación antigua). "
+        "Reimporta el ZIP para ver sugerencias."
+    ) in content
+    assert "Sin sugerencias aún." not in content
+
+
+@pytest.mark.django_db
+def test_revisar_incluye_low_o_sin_categoria(client):
+    categoria = Categoria.objects.create(nombre="Servicios")
+    proveedor = Proveedor.objects.create(ruc="555", razon_social="Proveedor Uno")
+    factura_low = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-LOW-1")
+    factura_none = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-NONE-1")
+    AsignacionClasificacionFactura.objects.create(
+        factura=factura_low,
+        categoria_sugerida=categoria,
+        confianza=Confianza.LOW,
+    )
+    AsignacionClasificacionFactura.objects.create(
+        factura=factura_none,
+        categoria_sugerida=None,
+        confianza=Confianza.MEDIUM,
+    )
+
+    response = client.get("/ingesta/revisar/")
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "CLAVE-LOW-1" in content
+    assert "CLAVE-NONE-1" in content
