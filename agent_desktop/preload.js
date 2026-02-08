@@ -13,6 +13,14 @@ contextBridge.exposeInMainWorld("agentApi", {
     ipcRenderer.invoke("agent:checkToken", { baseUrl, token }),
   loadPlan: (baseUrl, token, importacionId) =>
     ipcRenderer.invoke("agent:loadPlan", { baseUrl, token, importacionId }),
+  providerOpen: (baseUrl, token, importacionId) =>
+    ipcRenderer.invoke("agent:providerOpen", { baseUrl, token, importacionId }),
+  invoiceOpen: (baseUrl, token, importacionId) =>
+    ipcRenderer.invoke("agent:invoiceOpen", { baseUrl, token, importacionId }),
+  applyPrepare: (baseUrl, token, importacionId) =>
+    ipcRenderer.invoke("agent:applyPrepare", { baseUrl, token, importacionId }),
+  applyConfirm: (baseUrl, token, importacionId) =>
+    ipcRenderer.invoke("agent:applyConfirm", { baseUrl, token, importacionId }),
   screenshot: (baseUrl, token, importacionId, label) =>
     ipcRenderer.invoke("agent:screenshot", { baseUrl, token, importacionId, label }),
   postEvent: (baseUrl, token, eventPayload) =>

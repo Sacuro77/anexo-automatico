@@ -2,6 +2,15 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs/promises");
 const { chromium } = require("playwright");
+const {
+  buildActionContext,
+  getActionsFromPlan,
+  getCurrentAction,
+  interpolateDeep,
+  resolveCategoryOption,
+  validateConfigForAction,
+  validateFlowConfig
+} = require("./step_runner");
 
 let mainWindow = null;
 
@@ -15,6 +24,7 @@ const state = {
 };
 
 const SCREENSHOT_DIR = path.join(__dirname, "..", "tmp", "agent_desktop_screenshots");
+const CONFIG_PATH = path.join(__dirname, "sri_flow_config.json");
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -114,17 +124,147 @@ function sanitizeLabel(label) {
   return label.replace(/[^a-z0-9_-]/gi, "_").slice(0, 48);
 }
 
-function getActionsFromPlan(plan) {
-  if (!plan || typeof plan !== "object") {
-    return [];
+async function loadFlowConfig() {
+  try {
+    const raw = await fs.readFile(CONFIG_PATH, "utf-8");
+    return JSON.parse(raw);
+  } catch (error) {
+    const message = error && error.message ? error.message : String(error);
+    throw new Error(`Config requerida (${CONFIG_PATH}): ${message}`);
   }
-  if (Array.isArray(plan.acciones)) {
-    return plan.acciones;
+}
+
+async function getConfigStatus() {
+  try {
+    const config = await loadFlowConfig();
+    return { config, validation: validateFlowConfig(config), error: null };
+  } catch (error) {
+    return { config: null, validation: { ok: false, errors: ["config missing"] }, error };
   }
-  if (Array.isArray(plan.actions)) {
-    return plan.actions;
+}
+
+async function requireConfigForAction(actionName) {
+  const config = await loadFlowConfig();
+  const validation = validateConfigForAction(config, actionName);
+  if (!validation.ok) {
+    throw new Error(`Config requerida: ${validation.errors.join(", ")}`);
   }
-  return [];
+  return config;
+}
+
+function buildStepContext(action, config) {
+  return buildActionContext(action, {
+    target_url_login: config && config.target_url_login ? config.target_url_login : ""
+  });
+}
+
+function ensureAssistedPreconditions() {
+  if (!state.page) {
+    throw new Error("Browser page is not ready. Open the browser first.");
+  }
+  if (!state.loggedIn) {
+    throw new Error("Login pendiente. Marca 'Ya inicie sesion (continuar)'.");
+  }
+  if (!state.plan) {
+    throw new Error("Plan no cargado.");
+  }
+  const action = getCurrentAction(state.plan, state.planIndex);
+  if (!action) {
+    throw new Error("Plan sin acciones disponibles.");
+  }
+  return action;
+}
+
+async function runStepSequence(steps, context, options = {}) {
+  if (!Array.isArray(steps) || steps.length === 0) {
+    throw new Error("Config requerida: steps vacios.");
+  }
+  if (!state.page) {
+    throw new Error("Browser page is not ready.");
+  }
+
+  const page = state.page;
+  const logs = [];
+  const timeoutDefault = options.timeout || 15000;
+
+  for (let index = 0; index < steps.length; index += 1) {
+    const rawStep = steps[index];
+    const step = interpolateDeep(rawStep, context);
+    if (!step || typeof step !== "object") {
+      throw new Error(`Step invalido en indice ${index}.`);
+    }
+    const stepType = step.type;
+    const timeout = step.timeout || timeoutDefault;
+    logs.push({ index, type: stepType, ts: new Date().toISOString(), status: "start" });
+
+    switch (stepType) {
+      case "goto":
+        requireValue(step.url, "step.url");
+        await page.goto(step.url, {
+          waitUntil: step.waitUntil || "domcontentloaded",
+          timeout
+        });
+        break;
+      case "click":
+        requireValue(step.selector, "step.selector");
+        await page.click(step.selector, { timeout });
+        break;
+      case "fill":
+        requireValue(step.selector, "step.selector");
+        requireValue(step.text, "step.text");
+        await page.fill(step.selector, step.text, { timeout });
+        break;
+      case "select": {
+        requireValue(step.selector, "step.selector");
+        const option = step.value
+          ? { value: String(step.value) }
+          : step.label
+            ? { label: String(step.label) }
+            : step.text
+              ? { label: String(step.text) }
+              : null;
+        if (!option) {
+          throw new Error("step.select requiere value/label/text.");
+        }
+        await page.selectOption(step.selector, option, { timeout });
+        break;
+      }
+      case "waitForSelector":
+        requireValue(step.selector, "step.selector");
+        await page.waitForSelector(step.selector, { timeout });
+        break;
+      case "waitForURL":
+        if (step.url) {
+          await page.waitForURL(step.url, { timeout });
+        } else if (step.pattern) {
+          const regex = new RegExp(step.pattern);
+          await page.waitForURL(regex, { timeout });
+        } else {
+          throw new Error("step.waitForURL requiere url o pattern.");
+        }
+        break;
+      case "expectText": {
+        requireValue(step.selector, "step.selector");
+        requireValue(step.text, "step.text");
+        const content = await page.textContent(step.selector, { timeout });
+        if (!content || !content.includes(step.text)) {
+          throw new Error(`Texto esperado no encontrado: ${step.text}`);
+        }
+        break;
+      }
+      case "press":
+        requireValue(step.selector, "step.selector");
+        requireValue(step.key, "step.key");
+        await page.press(step.selector, step.key, { timeout });
+        break;
+      default:
+        throw new Error(`Tipo de step no soportado: ${stepType}`);
+    }
+
+    logs.push({ index, type: stepType, ts: new Date().toISOString(), status: "ok" });
+  }
+
+  return { logs };
 }
 
 async function captureScreenshot(label) {
@@ -142,16 +282,23 @@ async function captureScreenshot(label) {
   return filePath;
 }
 
-async function runStep({ baseUrl, token, importacionId, step, message }, action) {
+async function runStep(
+  { baseUrl, token, importacionId, step, message, eventExtra = {}, emitSuccess = true },
+  action
+) {
   requireValue(baseUrl, "base_url");
   requireValue(token, "token");
   requireValue(importacionId, "importacion_id");
 
   try {
     const result = await action();
-    const eventPayload = buildEvent(importacionId, step, "ok", message);
-    const eventResponse = await postEvent(baseUrl, token, eventPayload);
-    return { result, event: eventResponse };
+    let eventResponse = null;
+    let eventPayload = null;
+    if (emitSuccess) {
+      eventPayload = buildEvent(importacionId, step, "ok", message, eventExtra);
+      eventResponse = await postEvent(baseUrl, token, eventPayload);
+    }
+    return { result, event: eventResponse, eventPayload };
   } catch (error) {
     let screenshotPath = null;
     try {
@@ -166,7 +313,13 @@ async function runStep({ baseUrl, token, importacionId, step, message }, action)
       : errorMessage;
 
     try {
-      const eventPayload = buildEvent(importacionId, step, "error", fullMessage);
+      const eventPayload = buildEvent(
+        importacionId,
+        step,
+        "error",
+        fullMessage,
+        eventExtra
+      );
       await postEvent(baseUrl, token, eventPayload);
     } catch (postError) {
       // Ignore secondary failure so the original error is surfaced.
@@ -194,6 +347,73 @@ async function ensureBrowserState() {
   if (createdContext) {
     state.loggedIn = false;
   }
+}
+
+async function runProviderOpen(config, action) {
+  const context = buildStepContext(action, config);
+  return runStepSequence(config.provider_open.steps, context);
+}
+
+async function runInvoiceOpen(config, action) {
+  const context = buildStepContext(action, config);
+  return runStepSequence(config.invoice_open.steps, context);
+}
+
+async function runApplyPrepare(config, action) {
+  const context = buildStepContext(action, config);
+  if (Array.isArray(config.apply.steps_before_confirm) && config.apply.steps_before_confirm.length) {
+    await runStepSequence(config.apply.steps_before_confirm, context);
+  }
+
+  const page = state.page;
+  const categoryKey =
+    context.categoria_objetivo || context.categoria_nombre || context.categoria_id;
+  if (!categoryKey) {
+    throw new Error("Categoria objetivo no disponible en el plan.");
+  }
+
+  const option = resolveCategoryOption(categoryKey, config.apply.category_map);
+  if (!option) {
+    throw new Error(`Sin mapeo para categoria: ${categoryKey}`);
+  }
+
+  const selector = interpolateDeep(config.apply.category_selector, context);
+  requireValue(selector, "apply.category_selector");
+
+  const mode = config.apply.category_mode || "select";
+  if (mode === "fill") {
+    const text = option.text || option.label || option.value || String(categoryKey);
+    await page.fill(selector, text, { timeout: 15000 });
+    return { selected: text };
+  }
+
+  if (mode === "click") {
+    await page.click(selector, { timeout: 15000 });
+    const optionSelector = interpolateDeep(
+      config.apply.category_option_selector,
+      {
+        ...context,
+        value: option.value || "",
+        label: option.label || option.text || ""
+      }
+    );
+    requireValue(optionSelector, "apply.category_option_selector");
+    await page.click(optionSelector, { timeout: 15000 });
+    return { selected: option.value || option.label || option.text || String(categoryKey) };
+  }
+
+  const selectOption = option.value
+    ? { value: option.value }
+    : { label: option.label || option.text || String(categoryKey) };
+  await page.selectOption(selector, selectOption, { timeout: 15000 });
+  return { selected: selectOption.value || selectOption.label };
+}
+
+async function runApplyConfirm(config, action) {
+  const context = buildStepContext(action, config);
+  const selector = interpolateDeep(config.apply.confirm_selector, context);
+  requireValue(selector, "apply.confirm_selector");
+  await state.page.click(selector, { timeout: 15000 });
 }
 
 ipcMain.handle("agent:openBrowser", async (_event, payload) => {
@@ -288,6 +508,7 @@ ipcMain.handle("agent:loadPlan", async (_event, payload) => {
   state.plan = plan;
   state.planIndex = 0;
   const currentItem = actions[0] || null;
+  const configStatus = await getConfigStatus();
 
   const eventPayload = buildEvent(
     importacionId,
@@ -302,9 +523,110 @@ ipcMain.handle("agent:loadPlan", async (_event, payload) => {
     actionsCount: actions.length,
     currentIndex: state.planIndex,
     currentItem,
+    configStatus: {
+      ok: configStatus.validation.ok,
+      errors: configStatus.validation.errors,
+      error: configStatus.error ? configStatus.error.message : null
+    },
     event: eventResponse,
     eventPayload
   };
+});
+
+ipcMain.handle("agent:providerOpen", async (_event, payload) => {
+  const { baseUrl, token, importacionId } = payload;
+  return runStep(
+    {
+      baseUrl,
+      token,
+      importacionId,
+      step: "provider_open",
+      message: "Proveedor abierto"
+    },
+    async () => {
+      const action = ensureAssistedPreconditions();
+      const config = await requireConfigForAction("provider_open");
+      const result = await runProviderOpen(config, action);
+      return {
+        snapshot: getStateSnapshot(),
+        logs: result.logs
+      };
+    }
+  );
+});
+
+ipcMain.handle("agent:invoiceOpen", async (_event, payload) => {
+  const { baseUrl, token, importacionId } = payload;
+  return runStep(
+    {
+      baseUrl,
+      token,
+      importacionId,
+      step: "invoice_open",
+      message: "Factura abierta"
+    },
+    async () => {
+      const action = ensureAssistedPreconditions();
+      const config = await requireConfigForAction("invoice_open");
+      const result = await runInvoiceOpen(config, action);
+      return {
+        snapshot: getStateSnapshot(),
+        logs: result.logs
+      };
+    }
+  );
+});
+
+ipcMain.handle("agent:applyPrepare", async (_event, payload) => {
+  const { baseUrl, token, importacionId } = payload;
+  return runStep(
+    {
+      baseUrl,
+      token,
+      importacionId,
+      step: "apply",
+      message: "Categoria preparada",
+      emitSuccess: false
+    },
+    async () => {
+      const action = ensureAssistedPreconditions();
+      const config = await requireConfigForAction("apply");
+      const result = await runApplyPrepare(config, action);
+      return {
+        snapshot: getStateSnapshot(),
+        prepare: result
+      };
+    }
+  );
+});
+
+ipcMain.handle("agent:applyConfirm", async (_event, payload) => {
+  const { baseUrl, token, importacionId } = payload;
+  return runStep(
+    {
+      baseUrl,
+      token,
+      importacionId,
+      step: "apply",
+      message: "Categoria aplicada"
+    },
+    async () => {
+      const action = ensureAssistedPreconditions();
+      const config = await requireConfigForAction("apply");
+      await runApplyConfirm(config, action);
+      const actions = getActionsFromPlan(state.plan);
+      if (state.planIndex < actions.length - 1) {
+        state.planIndex += 1;
+      }
+      return {
+        snapshot: getStateSnapshot(),
+        planState: {
+          currentIndex: state.planIndex,
+          currentItem: getCurrentAction(state.plan, state.planIndex)
+        }
+      };
+    }
+  );
 });
 
 ipcMain.handle("agent:screenshot", async (_event, payload) => {
