@@ -284,8 +284,8 @@ def test_importacion_detail_resumen_por_categoria(client):
     assert response.status_code == 200
     content = response.content.decode("utf-8")
     assert "Resumen por categoría" in content
-    assert re.search(r"SALUD\s*</td>\s*<td>\s*2\s*</td>", content)
-    assert re.search(r"Sin categoría\s*</td>\s*<td>\s*1\s*</td>", content)
+    assert re.search(r"SALUD\s*</td>\s*<td[^>]*>\s*2\s*</td>", content)
+    assert re.search(r"Sin categoría\s*</td>\s*<td[^>]*>\s*1\s*</td>", content)
 
 
 @pytest.mark.django_db

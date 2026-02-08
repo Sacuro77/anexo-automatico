@@ -58,6 +58,12 @@
         border-collapse: collapse;
         margin-top: 12px;
       }
+      .table-compact {
+        margin-bottom: 16px;
+      }
+      .table-compact tbody tr:nth-child(even) {
+        background: #f9fafb;
+      }
       th,
       td {
         text-align: left;
@@ -68,6 +74,10 @@
       th {
         color: #374151;
         font-weight: 600;
+      }
+      .num {
+        text-align: right;
+        width: 120px;
       }
       .badge-low {
         color: #b91c1c;
@@ -118,18 +128,18 @@
         </dl>
         <h2>Resumen por categoría</h2>
         {% if resumen_por_categoria %}
-          <table>
+          <table class="table-compact">
             <thead>
               <tr>
                 <th>Categoría</th>
-                <th># Facturas</th>
+                <th class="num"># Facturas</th>
               </tr>
             </thead>
             <tbody>
               {% for item in resumen_por_categoria %}
                 <tr>
                   <td>{{ item.nombre_categoria }}</td>
-                  <td>{{ item.count }}</td>
+                  <td class="num">{{ item.count }}</td>
                 </tr>
               {% endfor %}
             </tbody>
