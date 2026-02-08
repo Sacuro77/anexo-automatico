@@ -15,3 +15,4 @@ staticfiles/
 dist/
 build/
 *.log
+agent_desktop/node_modules/
