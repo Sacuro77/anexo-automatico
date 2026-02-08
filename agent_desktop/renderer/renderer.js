@@ -287,9 +287,10 @@ async function handleApplyConfirm() {
 
   assistState.pendingApply = false;
   assistState.pendingItem = null;
-  if (data.planState) {
-    planState.index = data.planState.currentIndex;
-    planState.currentItem = data.planState.currentItem;
+  const nextPlanState = data.result && data.result.planState ? data.result.planState : null;
+  if (nextPlanState) {
+    planState.index = nextPlanState.currentIndex;
+    planState.currentItem = nextPlanState.currentItem;
     updatePlanUi();
   }
   hideConfirmModal();
