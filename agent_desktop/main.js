@@ -55,6 +55,340 @@ function requireValue(value, label) {
   }
 }
 
+function normText(value) {
+  if (value === undefined || value === null) {
+    return "";
+  }
+  return String(value).replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function clipLog(value, max = 200) {
+  if (!value) {
+    return "";
+  }
+  const text = String(value);
+  if (text.length <= max) {
+    return text;
+  }
+  return `${text.slice(0, max)}...`;
+}
+
+async function findRowByText(tableLocator, rowText, timeout, logPrefix) {
+  const target = normText(rowText);
+  if (!target) {
+    throw new Error(`${logPrefix} rowText empty or invalid.`);
+  }
+
+  let rows = tableLocator.locator("tbody tr");
+  let rowCount = await rows.count();
+  if (rowCount === 0) {
+    rows = tableLocator.locator("tr");
+    rowCount = await rows.count();
+  }
+
+  console.log(`[${logPrefix}] rows found=${rowCount}`);
+
+  const summaries = [];
+  let matchedIndex = -1;
+
+  for (let i = 0; i < rowCount; i += 1) {
+    const row = rows.nth(i);
+    let rawText = "";
+    try {
+      rawText = await row.innerText({ timeout });
+    } catch (error) {
+      rawText = "";
+    }
+    const normalized = normText(rawText);
+    summaries.push(`#${i}:${clipLog(normalized)}`);
+    if (matchedIndex === -1 && normalized.includes(target)) {
+      matchedIndex = i;
+    }
+  }
+
+  console.log(`[${logPrefix}] row texts: ${summaries.join(" | ")}`);
+
+  if (matchedIndex === -1) {
+    throw new Error(`${logPrefix} rowText not found: "${rowText}"`);
+  }
+
+  const matchedRow = rows.nth(matchedIndex);
+
+  console.log(`[${logPrefix}] matched row index=${matchedIndex}`);
+
+  return { row: matchedRow, rowIndex: matchedIndex, rowCount };
+}
+
+async function assertOnPage(page, step, timeout) {
+  const urlPattern = step.urlPattern;
+  const selector = step.selector;
+  const anyText = step.anyText;
+
+  if (!urlPattern && !selector && !anyText) {
+    throw new Error("assertOnPage requiere urlPattern, selector o anyText.");
+  }
+
+  console.log(
+    `[assertOnPage] url=${page.url()} | urlPattern=${urlPattern || "n/a"} | selector=${selector || "n/a"} | anyText=${
+      Array.isArray(anyText) ? JSON.stringify(anyText) : "n/a"
+    }`
+  );
+
+  const errors = [];
+
+  if (urlPattern) {
+    let regex = null;
+    try {
+      regex = new RegExp(urlPattern);
+    } catch (error) {
+      throw new Error(`assertOnPage urlPattern invalido: ${urlPattern}`);
+    }
+    const currentUrl = page.url();
+    const match = regex.test(currentUrl);
+    console.log(`[assertOnPage] urlPattern match=${match} currentUrl=${currentUrl}`);
+    if (!match) {
+      errors.push(`URL no coincide con /${urlPattern}/`);
+    }
+  }
+
+  if (selector) {
+    const locator = page.locator(selector).first();
+    let selectorError = null;
+    try {
+      await locator.waitFor({ state: "visible", timeout });
+    } catch (error) {
+      selectorError = error;
+    }
+    let count = 0;
+    let visible = false;
+    try {
+      count = await locator.count();
+      if (count > 0) {
+        visible = await locator.isVisible();
+      }
+    } catch (error) {
+      count = 0;
+      visible = false;
+    }
+    console.log(
+      `[assertOnPage] selector=${selector} count=${count} visible=${visible}`
+    );
+    if (selectorError || !count || !visible) {
+      errors.push(`Selector no visible: ${selector}`);
+    }
+  }
+
+  if (anyText !== undefined && anyText !== null) {
+    if (!Array.isArray(anyText)) {
+      throw new Error("assertOnPage anyText debe ser array.");
+    }
+    const normalizedTexts = anyText
+      .map((entry) => normText(entry))
+      .filter((entry) => entry);
+    if (!normalizedTexts.length) {
+      throw new Error("assertOnPage anyText vacio.");
+    }
+    let bodyText = "";
+    try {
+      const raw = await page.textContent("body", { timeout });
+      bodyText = normText(raw || "");
+    } catch (error) {
+      bodyText = "";
+    }
+    const matches = normalizedTexts.map((text) => ({
+      text,
+      matched: bodyText.includes(text)
+    }));
+    const matchedAny = matches.some((entry) => entry.matched);
+    console.log(
+      `[assertOnPage] anyText matches=${JSON.stringify(matches)}`
+    );
+    if (!matchedAny) {
+      errors.push(`Texto esperado no encontrado: ${JSON.stringify(anyText)}`);
+    }
+  }
+
+  if (errors.length) {
+    throw new Error(`assertOnPage failed: ${errors.join(" | ")}`);
+  }
+}
+
+async function clickRowAction(page, step, timeout) {
+  requireValue(step.table, "step.table");
+  requireValue(step.rowText, "step.rowText");
+  if (!Array.isArray(step.actionSelectors) || step.actionSelectors.length === 0) {
+    throw new Error("clickRowAction actionSelectors debe ser array no vacio.");
+  }
+
+  console.log(
+    `[clickRowAction] table=${step.table} rowText="${step.rowText}" selectors=${JSON.stringify(
+      step.actionSelectors
+    )}`
+  );
+
+  const table = page.locator(step.table).first();
+  await table.waitFor({ state: "attached", timeout });
+  const { row } = await findRowByText(table, step.rowText, timeout, "clickRowAction");
+
+  for (const selector of step.actionSelectors) {
+    const locator = row.locator(selector).first();
+    let count = 0;
+    let visible = false;
+    let enabled = false;
+    try {
+      count = await locator.count();
+      if (count > 0) {
+        visible = await locator.isVisible();
+        enabled = await locator.isEnabled();
+      }
+    } catch (error) {
+      count = 0;
+    }
+
+    console.log(
+      `[clickRowAction] trying selector=${selector} count=${count} visible=${visible} enabled=${enabled}`
+    );
+
+    if (!count) {
+      continue;
+    }
+
+    try {
+      await locator.scrollIntoViewIfNeeded({ timeout });
+    } catch (error) {
+      const detail =
+        error && (error.name || error.message)
+          ? error.name || error.message
+          : String(error);
+      console.log(`[clickRowAction] scroll failed: ${selector} - ${detail}`);
+    }
+
+    try {
+      await locator.click({ timeout, force: true });
+      console.log(`[clickRowAction] clicked via locator.click: ${selector}`);
+      return;
+    } catch (error) {
+      const detail =
+        error && (error.name || error.message)
+          ? error.name || error.message
+          : String(error);
+      console.log(`[clickRowAction] click failed: ${selector} - ${detail}`);
+    }
+
+    try {
+      await locator.evaluate((el) => el.click());
+      console.log(`[clickRowAction] clicked via evaluate: ${selector}`);
+      return;
+    } catch (error) {
+      const detail =
+        error && (error.name || error.message)
+          ? error.name || error.message
+          : String(error);
+      console.log(`[clickRowAction] evaluate failed: ${selector} - ${detail}`);
+    }
+  }
+
+  throw new Error(`clickRowAction: none worked: ${JSON.stringify(step.actionSelectors)}`);
+}
+
+async function clickTableCellLink(page, step, timeout) {
+  requireValue(step.table, "step.table");
+  requireValue(step.rowText, "step.rowText");
+
+  const linkSelectors =
+    Array.isArray(step.linkSelectors) && step.linkSelectors.length
+      ? step.linkSelectors
+      : ["a", "button"];
+
+  console.log(
+    `[clickTableCellLink] table=${step.table} rowText="${step.rowText}" cellIndex=${
+      step.cellIndex === undefined || step.cellIndex === null ? "n/a" : step.cellIndex
+    } linkSelectors=${JSON.stringify(linkSelectors)}`
+  );
+
+  const table = page.locator(step.table).first();
+  await table.waitFor({ state: "attached", timeout });
+  const { row } = await findRowByText(table, step.rowText, timeout, "clickTableCellLink");
+
+  let scope = row;
+  if (step.cellIndex !== undefined && step.cellIndex !== null) {
+    const cells = row.locator("td,th");
+    const cellCount = await cells.count();
+    console.log(`[clickTableCellLink] cellCount=${cellCount}`);
+    if (step.cellIndex < 0 || step.cellIndex >= cellCount) {
+      throw new Error(
+        `clickTableCellLink: cellIndex ${step.cellIndex} fuera de rango (0-${Math.max(
+          0,
+          cellCount - 1
+        )})`
+      );
+    }
+    scope = cells.nth(step.cellIndex);
+  }
+
+  for (const selector of linkSelectors) {
+    const candidates = scope.locator(selector);
+    const count = await candidates.count();
+    console.log(`[clickTableCellLink] scanning selector=${selector} count=${count}`);
+    for (let i = 0; i < count; i += 1) {
+      const candidate = candidates.nth(i);
+      let visible = false;
+      try {
+        visible = await candidate.isVisible();
+      } catch (error) {
+        visible = false;
+      }
+      if (!visible) {
+        continue;
+      }
+
+      try {
+        await candidate.scrollIntoViewIfNeeded({ timeout });
+      } catch (error) {
+        const detail =
+          error && (error.name || error.message)
+            ? error.name || error.message
+            : String(error);
+        console.log(`[clickTableCellLink] scroll failed: ${selector} - ${detail}`);
+      }
+
+      try {
+        await candidate.click({ timeout, force: true });
+        console.log(
+          `[clickTableCellLink] clicked selector=${selector} index=${i}`
+        );
+        return;
+      } catch (error) {
+        const detail =
+          error && (error.name || error.message)
+            ? error.name || error.message
+            : String(error);
+        console.log(`[clickTableCellLink] click failed: ${selector} - ${detail}`);
+      }
+
+      try {
+        await candidate.evaluate((el) => el.click());
+        console.log(
+          `[clickTableCellLink] clicked via evaluate selector=${selector} index=${i}`
+        );
+        return;
+      } catch (error) {
+        const detail =
+          error && (error.name || error.message)
+            ? error.name || error.message
+            : String(error);
+        console.log(`[clickTableCellLink] evaluate failed: ${selector} - ${detail}`);
+      }
+    }
+  }
+
+  throw new Error(
+    `clickTableCellLink: no se encontro link/button visible. selectors=${JSON.stringify(
+      linkSelectors
+    )}`
+  );
+}
+
 async function requestJson(method, url, token, body) {
   requireValue(token, "token");
 
@@ -199,6 +533,15 @@ async function runStepSequence(steps, context, options = {}) {
     logs.push({ index, type: stepType, ts: new Date().toISOString(), status: "start" });
 
     switch (stepType) {
+      case "assertOnPage":
+        await assertOnPage(page, step, timeout);
+        break;
+      case "clickRowAction":
+        await clickRowAction(page, step, timeout);
+        break;
+      case "clickTableCellLink":
+        await clickTableCellLink(page, step, timeout);
+        break;
       case "goto":
         requireValue(step.url, "step.url");
         await page.goto(step.url, {
