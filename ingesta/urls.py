@@ -12,6 +12,11 @@ urlpatterns = [
         name="ingesta-export-csv",
     ),
     path(
+        "importaciones/<int:importacion_id>/plan.json",
+        views.importacion_export_plan_json,
+        name="ingesta-export-plan-json",
+    ),
+    path(
         "importaciones/<int:importacion_id>/",
         views.importacion_detail,
         name="ingesta-detail",
