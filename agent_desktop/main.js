@@ -258,6 +258,23 @@ async function runStepSequence(steps, context, options = {}) {
         requireValue(step.key, "step.key");
         await page.press(step.selector, step.key, { timeout });
         break;
+      case "ensureSidebarOpen": {
+        requireValue(step.hamburger, "step.hamburger");
+        requireValue(step.sidebarVisible, "step.sidebarVisible");
+        const probeTimeout = Math.min(1000, timeout);
+        const alreadyVisible = await page
+          .waitForSelector(step.sidebarVisible, { timeout: probeTimeout, state: "visible" })
+          .then(() => true)
+          .catch(() => false);
+        if (alreadyVisible) {
+          console.log("[step_runner] sidebar already open");
+          break;
+        }
+        await page.click(step.hamburger, { timeout });
+        await page.waitForSelector(step.sidebarVisible, { timeout, state: "visible" });
+        console.log("[step_runner] opened sidebar via hamburger");
+        break;
+      }
       default:
         throw new Error(`Tipo de step no soportado: ${stepType}`);
     }
