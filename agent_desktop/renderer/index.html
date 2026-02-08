@@ -28,7 +28,7 @@
       }
 
       .app {
-        width: min(980px, 100%);
+        width: min(1040px, 100%);
         background: rgba(255, 255, 255, 0.86);
         border-radius: 18px;
         box-shadow: 0 30px 60px rgba(16, 24, 40, 0.15);
@@ -75,9 +75,48 @@
         background: #ffffff;
       }
 
+      .status {
+        display: grid;
+        gap: 12px;
+      }
+
+      .status h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        color: #2e3a44;
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+      }
+
+      .status-card {
+        background: #f4f7fb;
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid #d7e0ea;
+        display: grid;
+        gap: 6px;
+      }
+
+      .status-card span {
+        font-size: 0.8rem;
+        color: #5a6874;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .status-card strong {
+        font-size: 0.95rem;
+        color: #0f1b24;
+        word-break: break-word;
+      }
+
       .actions {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
         gap: 12px;
       }
 
@@ -137,13 +176,44 @@
           Importacion ID
           <input id="importacionId" type="text" placeholder="e.g. 123" />
         </label>
+        <label>
+          Target URL
+          <input id="targetUrl" type="text" value="https://srienlinea.sri.gob.ec" />
+        </label>
+      </section>
+
+      <section class="status">
+        <h2>Estado</h2>
+        <div class="status-grid">
+          <div class="status-card">
+            <span>Browser</span>
+            <strong id="statusBrowser">-</strong>
+          </div>
+          <div class="status-card">
+            <span>Context</span>
+            <strong id="statusContext">-</strong>
+          </div>
+          <div class="status-card">
+            <span>Page</span>
+            <strong id="statusPage">-</strong>
+          </div>
+          <div class="status-card">
+            <span>Login</span>
+            <strong id="statusLogin">-</strong>
+          </div>
+          <div class="status-card">
+            <span>URL</span>
+            <strong id="statusUrl">-</strong>
+          </div>
+        </div>
       </section>
 
       <section class="actions">
-        <button id="btnTest">Probar conexion</button>
-        <button id="btnPlan" class="secondary">Descargar plan</button>
-        <button id="btnEvent">Registrar evento</button>
-        <button id="btnBrowser" class="secondary">Abrir SRI</button>
+        <button id="btnOpenBrowser">Abrir navegador</button>
+        <button id="btnOpenSri" class="secondary">Abrir SRI</button>
+        <button id="btnLoggedIn">Ya inicie sesion (continuar)</button>
+        <button id="btnGoto" class="secondary">Ir a URL (manual)</button>
+        <button id="btnEventOk">Enviar evento OK</button>
       </section>
 
       <pre id="logs">Ready.</pre>

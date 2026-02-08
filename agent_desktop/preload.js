@@ -1,12 +1,16 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("agentApi", {
-  testConnection: (baseUrl, token) =>
-    ipcRenderer.invoke("agent:me", { baseUrl, token }),
-  downloadPlan: (baseUrl, token, importacionId) =>
-    ipcRenderer.invoke("agent:plan", { baseUrl, token, importacionId }),
-  registerEvent: (baseUrl, token, eventPayload) =>
-    ipcRenderer.invoke("agent:event", { baseUrl, token, eventPayload }),
-  openBrowser: (baseUrl, token, importacionId, url) =>
-    ipcRenderer.invoke("agent:openBrowser", { baseUrl, token, importacionId, url })
+  openBrowser: (baseUrl, token, importacionId) =>
+    ipcRenderer.invoke("agent:openBrowser", { baseUrl, token, importacionId }),
+  goto: (baseUrl, token, importacionId, url) =>
+    ipcRenderer.invoke("agent:goto", { baseUrl, token, importacionId, url }),
+  markLoggedIn: (baseUrl, token, importacionId) =>
+    ipcRenderer.invoke("agent:markLoggedIn", { baseUrl, token, importacionId }),
+  status: (baseUrl, token, importacionId) =>
+    ipcRenderer.invoke("agent:status", { baseUrl, token, importacionId }),
+  screenshot: (baseUrl, token, importacionId, label) =>
+    ipcRenderer.invoke("agent:screenshot", { baseUrl, token, importacionId, label }),
+  postEvent: (baseUrl, token, eventPayload) =>
+    ipcRenderer.invoke("agent:postEvent", { baseUrl, token, eventPayload })
 });
