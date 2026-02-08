@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
+const crypto = require("crypto");
 const path = require("path");
 const fs = require("fs/promises");
 const { chromium } = require("playwright");
@@ -267,7 +268,7 @@ async function runStepSequence(steps, context, options = {}) {
   return { logs };
 }
 
-async function captureScreenshot(label) {
+async function captureScreenshotEvidence(label) {
   if (!state.page) {
     return null;
   }
@@ -279,7 +280,18 @@ async function captureScreenshot(label) {
   const filePath = path.join(SCREENSHOT_DIR, fileName);
 
   await state.page.screenshot({ path: filePath, fullPage: true });
-  return filePath;
+  const buffer = await fs.readFile(filePath);
+  const sha256 = crypto.createHash("sha256").update(buffer).digest("hex");
+  return {
+    filePath,
+    sha256,
+    size: buffer.length
+  };
+}
+
+async function captureScreenshot(label) {
+  const evidence = await captureScreenshotEvidence(label);
+  return evidence ? evidence.filePath : null;
 }
 
 async function runStep(
@@ -300,17 +312,18 @@ async function runStep(
     }
     return { result, event: eventResponse, eventPayload };
   } catch (error) {
-    let screenshotPath = null;
+    let evidence = null;
     try {
-      screenshotPath = await captureScreenshot(`error_${step}`);
+      evidence = await captureScreenshotEvidence(`error_${step}`);
     } catch (screenshotError) {
-      screenshotPath = null;
+      evidence = null;
     }
 
     const errorMessage = error && error.message ? error.message : String(error);
-    const fullMessage = screenshotPath
-      ? `${errorMessage} | screenshot: ${screenshotPath}`
-      : errorMessage;
+    const baseMessage = `step=${step} error=${errorMessage}`;
+    const fullMessage = evidence
+      ? `${baseMessage} | evidence_path=${evidence.filePath} | sha256=${evidence.sha256} | size=${evidence.size}`
+      : baseMessage;
 
     try {
       const eventPayload = buildEvent(
@@ -325,7 +338,11 @@ async function runStep(
       // Ignore secondary failure so the original error is surfaced.
     }
 
-    throw error;
+    if (error && typeof error === "object") {
+      error.message = fullMessage;
+      throw error;
+    }
+    throw new Error(fullMessage);
   }
 }
 
@@ -535,13 +552,16 @@ ipcMain.handle("agent:loadPlan", async (_event, payload) => {
 
 ipcMain.handle("agent:providerOpen", async (_event, payload) => {
   const { baseUrl, token, importacionId } = payload;
+  const currentAction = getCurrentAction(state.plan, state.planIndex) || {};
+  const proveedorLabel =
+    currentAction.proveedor_ruc || currentAction.proveedor_id || "N/A";
   return runStep(
     {
       baseUrl,
       token,
       importacionId,
       step: "provider_open",
-      message: "Proveedor abierto"
+      message: `Proveedor abierto (${proveedorLabel}).`
     },
     async () => {
       const action = ensureAssistedPreconditions();
@@ -557,13 +577,18 @@ ipcMain.handle("agent:providerOpen", async (_event, payload) => {
 
 ipcMain.handle("agent:invoiceOpen", async (_event, payload) => {
   const { baseUrl, token, importacionId } = payload;
+  const currentAction = getCurrentAction(state.plan, state.planIndex) || {};
+  const facturaLabel =
+    currentAction.clave_acceso || currentAction.factura_id || "N/A";
+  const eventExtra = currentAction.factura_id ? { factura_id: currentAction.factura_id } : {};
   return runStep(
     {
       baseUrl,
       token,
       importacionId,
       step: "invoice_open",
-      message: "Factura abierta"
+      message: `Factura abierta (${facturaLabel}).`,
+      eventExtra
     },
     async () => {
       const action = ensureAssistedPreconditions();
@@ -579,6 +604,8 @@ ipcMain.handle("agent:invoiceOpen", async (_event, payload) => {
 
 ipcMain.handle("agent:applyPrepare", async (_event, payload) => {
   const { baseUrl, token, importacionId } = payload;
+  const currentAction = getCurrentAction(state.plan, state.planIndex) || {};
+  const eventExtra = currentAction.factura_id ? { factura_id: currentAction.factura_id } : {};
   return runStep(
     {
       baseUrl,
@@ -586,7 +613,8 @@ ipcMain.handle("agent:applyPrepare", async (_event, payload) => {
       importacionId,
       step: "apply",
       message: "Categoria preparada",
-      emitSuccess: false
+      emitSuccess: false,
+      eventExtra
     },
     async () => {
       const action = ensureAssistedPreconditions();
@@ -602,13 +630,20 @@ ipcMain.handle("agent:applyPrepare", async (_event, payload) => {
 
 ipcMain.handle("agent:applyConfirm", async (_event, payload) => {
   const { baseUrl, token, importacionId } = payload;
+  const currentAction = getCurrentAction(state.plan, state.planIndex) || {};
+  const categoriaLabel =
+    currentAction.categoria_nombre || currentAction.categoria_id || "categoria";
+  const facturaLabel =
+    currentAction.clave_acceso || currentAction.factura_id || "factura";
+  const eventExtra = currentAction.factura_id ? { factura_id: currentAction.factura_id } : {};
   return runStep(
     {
       baseUrl,
       token,
       importacionId,
       step: "apply",
-      message: "Categoria aplicada"
+      message: `Categoria ${categoriaLabel} aplicada a ${facturaLabel}.`,
+      eventExtra
     },
     async () => {
       const action = ensureAssistedPreconditions();
