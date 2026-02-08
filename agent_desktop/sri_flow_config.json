@@ -1,14 +1,51 @@
 {
   "_comment": "Reemplace los selectores y pasos con los reales del SRI.",
   "target_url_login": "https://srienlinea.sri.gob.ec",
-  "provider_open": {
-    "steps": [
-      { "type": "goto", "url": "{{target_url_login}}" },
-      { "type": "click", "selector": "REEMPLAZAR_SELECTOR_MENU_PROVEEDOR" },
-      { "type": "fill", "selector": "REEMPLAZAR_SELECTOR_RUC", "text": "{{proveedor_ruc}}" },
-      { "type": "click", "selector": "REEMPLAZAR_SELECTOR_BUSCAR" }
-    ]
-  },
+"provider_open": {
+  "steps": [
+    {
+      "type": "ensureSidebarOpen",
+      "hamburger": "button#sri-menu",
+      "sidebar1": "#mySidebar",
+      "sidebar2": "#mySidebar2"
+    },
+
+    {
+      "type": "clickAny",
+      "selectors": [
+        "css=#mySidebar a.ui-panelmenu-header-link:has-text('ANEXOS')",
+        "css=#mySidebar span.ui-menuitem-text:has-text('ANEXOS')"
+      ]
+    },
+
+    {
+      "type": "clickAny",
+      "selectors": [
+        "css=#mySidebar a.ui-menuitem-link:has-text('Anexo de gastos personales en línea')",
+        "css=#mySidebar span.ui-menuitem-text:has-text('Anexo de gastos personales en línea')"
+      ]
+    },
+
+    {
+      "type": "clickAny",
+      "logUrlAfter": true,
+      "selectors": [
+        "css=#mySidebar a.ui-menuitem-link:has-text('Generación anexo')",
+        "css=#mySidebar a.ui-menuitem-link[href*='tportal-internet/accederAplicacion.jspa?redireccion=101&idGrupo=98']",
+        "css=#mySidebar a.ui-menuitem-link[href*='tportal-internet/accederAplicacion.jspa?redireccion=101']"
+      ]
+    },
+
+    {
+      "type": "waitForURL",
+      "timeout": 60000,
+      "pattern": "tportal-internet|accederAplicacion\\.jspa|sriservicios\\.sri\\.gob\\.ec/anexo-gastos-personales|anexo-gastos-personales|anexos\\.jsf"
+    }
+  ]
+},
+
+
+
   "invoice_open": {
     "steps": [
       { "type": "fill", "selector": "REEMPLAZAR_SELECTOR_CLAVE", "text": "{{clave_acceso}}" },
