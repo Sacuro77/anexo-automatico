@@ -1,5 +1,6 @@
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Count, F, Q, Value
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -104,6 +105,18 @@ def importacion_detail(request, importacion_id: int):
         .select_related("categoria_sugerida")
         .order_by()
     )
+    resumen_por_categoria = list(
+        AsignacionClasificacionFactura.objects.filter(factura_id__in=factura_ids)
+        .annotate(
+            nombre_categoria=Coalesce(
+                F("categoria_sugerida__nombre"),
+                Value("Sin categoría"),
+            )
+        )
+        .values("nombre_categoria")
+        .annotate(count=Count("id"))
+        .order_by("-count", "nombre_categoria")
+    )
     asignaciones_by_id = {asignacion.factura_id: asignacion for asignacion in asignaciones}
     factura_sugerencias = []
     for factura_id in factura_ids:
@@ -125,6 +138,7 @@ def importacion_detail(request, importacion_id: int):
             "factura_limit": max_facturas,
             "factura_total": total_facturas,
             "fallback_message": fallback_message,
+            "resumen_por_categoria": resumen_por_categoria,
         },
     )
 

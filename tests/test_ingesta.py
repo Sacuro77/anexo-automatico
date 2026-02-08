@@ -1,4 +1,5 @@
 import io
+import re
 import zipfile
 
 import pytest
@@ -244,6 +245,47 @@ def test_importacion_detail_muestra_fallback_sin_factura_id(client):
         "Reimporta el ZIP para ver sugerencias."
     ) in content
     assert "Sin sugerencias aún." not in content
+
+
+@pytest.mark.django_db
+def test_importacion_detail_resumen_por_categoria(client):
+    proveedor = Proveedor.objects.create(ruc="222", razon_social="Proveedor Dos")
+    factura_uno = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-RES-1")
+    factura_dos = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-RES-2")
+    factura_tres = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-RES-3")
+    categoria = Categoria.objects.create(nombre="SALUD")
+    AsignacionClasificacionFactura.objects.create(
+        factura=factura_uno,
+        categoria_sugerida=categoria,
+        confianza=Confianza.HIGH,
+    )
+    AsignacionClasificacionFactura.objects.create(
+        factura=factura_dos,
+        categoria_sugerida=categoria,
+        confianza=Confianza.MEDIUM,
+    )
+    AsignacionClasificacionFactura.objects.create(
+        factura=factura_tres,
+        categoria_sugerida=None,
+        confianza=Confianza.LOW,
+    )
+    importacion = Importacion.objects.create(
+        log_json={
+            "files": [
+                {"factura_id": factura_uno.id},
+                {"factura_id": factura_dos.id},
+                {"factura_id": factura_tres.id},
+            ]
+        }
+    )
+
+    response = client.get(f"/ingesta/importaciones/{importacion.id}/")
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "Resumen por categoría" in content
+    assert re.search(r"SALUD\s*</td>\s*<td[^>]*>\s*2\s*</td>", content)
+    assert re.search(r"Sin categoría\s*</td>\s*<td[^>]*>\s*1\s*</td>", content)
 
 
 @pytest.mark.django_db
