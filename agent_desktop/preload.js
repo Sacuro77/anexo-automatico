@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld("agentApi", {
     ipcRenderer.invoke("agent:loadPlan", { baseUrl, token, importacionId }),
   providerOpen: (baseUrl, token, importacionId) =>
     ipcRenderer.invoke("agent:providerOpen", { baseUrl, token, importacionId }),
+  providerOpenByRuc: (baseUrl, token, importacionId, ruc) =>
+    ipcRenderer.invoke("agent:providerOpenByRuc", { baseUrl, token, importacionId, ruc }),
   invoiceOpen: (baseUrl, token, importacionId) =>
     ipcRenderer.invoke("agent:invoiceOpen", { baseUrl, token, importacionId }),
   applyPrepare: (baseUrl, token, importacionId) =>
