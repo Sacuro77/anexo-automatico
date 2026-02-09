@@ -920,6 +920,18 @@ async function runProviderOpen(config, action) {
   return runStepSequence(config.provider_open.steps, context);
 }
 
+async function runProviderOpenByRuc(config, action, ruc) {
+  const steps =
+    config && config.proveedor_open_by_ruc
+      ? config.proveedor_open_by_ruc.steps
+      : null;
+  if (!Array.isArray(steps) || steps.length === 0) {
+    throw new Error("Config requerida: proveedor_open_by_ruc.steps");
+  }
+  const context = buildActionContext(action, { ruc });
+  return runStepSequence(steps, context);
+}
+
 async function runInvoiceOpen(config, action) {
   const context = buildStepContext(action, config);
   return runStepSequence(config.invoice_open.steps, context);
@@ -1131,6 +1143,54 @@ ipcMain.handle("agent:providerOpen", async (_event, payload) => {
       result: {
         ok: false,
         step: "provider_open",
+        error: fullError,
+        logs: []
+      },
+      event: null,
+      eventPayload: null
+    };
+  }
+});
+
+ipcMain.handle("agent:providerOpenByRuc", async (_event, payload) => {
+  const { baseUrl, token, importacionId, ruc } = payload;
+  const trimmedRuc = ruc ? String(ruc).trim() : "";
+  const currentAction = getCurrentAction(state.plan, state.planIndex) || {};
+  const proveedorLabel =
+    trimmedRuc || currentAction.proveedor_ruc || currentAction.proveedor_id || "N/A";
+  const eventExtra = trimmedRuc ? { ruc: trimmedRuc } : {};
+  try {
+    return await runStep(
+      {
+        baseUrl,
+        token,
+        importacionId,
+        step: "provider_open_by_ruc",
+        message: `Proveedor abierto por RUC (${proveedorLabel}).`,
+        eventExtra
+      },
+      async () => {
+        const action = ensureAssistedPreconditions();
+        if (!trimmedRuc) {
+          throw new Error("provider_open_by_ruc requiere ruc.");
+        }
+        console.log(`provider_open_by_ruc: ruc=${trimmedRuc}`);
+        const config = await requireConfigForAction("proveedor_open_by_ruc");
+        const result = await runProviderOpenByRuc(config, action, trimmedRuc);
+        return {
+          snapshot: getStateSnapshot(),
+          logs: result?.logs ?? []
+        };
+      }
+    );
+  } catch (error) {
+    const url = state.page ? state.page.url() : null;
+    const errorMessage = error && error.message ? error.message : String(error);
+    const fullError = url ? `${errorMessage} | url=${url}` : errorMessage;
+    return {
+      result: {
+        ok: false,
+        step: "provider_open_by_ruc",
         error: fullError,
         logs: []
       },

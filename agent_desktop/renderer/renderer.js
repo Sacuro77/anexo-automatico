@@ -225,14 +225,100 @@ function requirePlanLoaded() {
   }
 }
 
+function requestRucModal(message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.inset = "0";
+    overlay.style.background = "rgba(15, 27, 36, 0.4)";
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.padding = "24px";
+    overlay.style.zIndex = "9999";
+
+    const card = document.createElement("div");
+    card.style.background = "#ffffff";
+    card.style.borderRadius = "16px";
+    card.style.padding = "20px";
+    card.style.maxWidth = "420px";
+    card.style.width = "100%";
+    card.style.display = "grid";
+    card.style.gap = "12px";
+    card.style.boxShadow = "0 20px 40px rgba(15, 27, 36, 0.2)";
+
+    const title = document.createElement("h3");
+    title.textContent = message || "Ingrese RUC del proveedor";
+    title.style.margin = "0";
+    title.style.fontSize = "1.2rem";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "RUC";
+    input.style.padding = "10px 12px";
+    input.style.borderRadius = "10px";
+    input.style.border = "1px solid #cbd5df";
+    input.style.fontSize = "0.95rem";
+
+    const actions = document.createElement("div");
+    actions.style.display = "grid";
+    actions.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
+    actions.style.gap = "12px";
+
+    const btnCancel = document.createElement("button");
+    btnCancel.type = "button";
+    btnCancel.textContent = "Cancelar";
+    btnCancel.className = "secondary";
+
+    const btnOk = document.createElement("button");
+    btnOk.type = "button";
+    btnOk.textContent = "OK";
+
+    actions.appendChild(btnCancel);
+    actions.appendChild(btnOk);
+    card.appendChild(title);
+    card.appendChild(input);
+    card.appendChild(actions);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const cleanup = (value) => {
+      overlay.remove();
+      resolve(value || "");
+    };
+
+    btnCancel.addEventListener("click", () => cleanup(""));
+    btnOk.addEventListener("click", () => cleanup(input.value));
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        cleanup(input.value);
+      } else if (event.key === "Escape") {
+        cleanup("");
+      }
+    });
+
+    input.focus();
+  });
+}
+
 async function handleProviderOpen() {
   const { baseUrl, token, importacionId } = getInputs();
   requireBaseInputs({ baseUrl, token, importacionId });
   requirePlanLoaded();
 
-  appendLog("Ir a proveedor...");
-  const data = await window.agentApi.providerOpen(baseUrl, token, importacionId);
-  appendLog("Proveedor abierto", data.result);
+  const item = planState.currentItem || {};
+  let ruc = item.ruc || item.proveedor_ruc || (item.proveedor && item.proveedor.ruc) || "";
+  if (!ruc) {
+    ruc = await requestRucModal("Ingrese RUC del proveedor");
+  }
+  ruc = String(ruc).trim();
+  if (!ruc) {
+    throw new Error("RUC requerido para abrir proveedor.");
+  }
+
+  appendLog(`Ir a proveedor por RUC: ${ruc}...`);
+  const data = await window.agentApi.providerOpenByRuc(baseUrl, token, importacionId, ruc);
+  appendLog(`Proveedor abierto por RUC: ${ruc}`, data.result);
   updateStatus(data.result && data.result.snapshot ? data.result.snapshot : data.result);
   updateLastEvent(data.eventPayload, data.event);
 }
