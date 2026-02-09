@@ -358,7 +358,8 @@ def test_importacion_export_csv(client):
 
 @pytest.mark.django_db
 def test_importacion_export_plan_json(client):
-    proveedor = Proveedor.objects.create(ruc="888", razon_social="Proveedor Plan")
+    proveedor_ruc = "1790012345001"
+    proveedor = Proveedor.objects.create(ruc=proveedor_ruc, razon_social="Proveedor Plan")
     factura_uno = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-PLAN-1")
     factura_dos = Factura.objects.create(proveedor=proveedor, clave_acceso="CLAVE-PLAN-2")
     categoria = Categoria.objects.create(nombre="SALUD")
@@ -389,6 +390,7 @@ def test_importacion_export_plan_json(client):
     assert payload["total_items"] == 1
     assert payload["acciones"][0]["categoria_nombre"] == "SALUD"
     assert payload["acciones"][0]["factura_id"] == factura_uno.id
+    assert payload["acciones"][0]["proveedor_ruc"] == proveedor_ruc
     assert all(
         item["factura_id"] != factura_dos.id for item in payload["acciones"]
     )
