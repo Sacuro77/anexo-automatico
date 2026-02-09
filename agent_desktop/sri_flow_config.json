@@ -54,6 +54,33 @@
 },
 
 
+  "anexo_open_facturas_electronicas": {
+    "steps": [
+      {
+        "type": "assertOnPage",
+        "urlPattern": "editar-anexo\\.jsf",
+        "anyText": ["Anexo"]
+      },
+      {
+        "type": "clickAny",
+        "selectors": [
+          "css=a:has-text('Mis facturas electrónicas')",
+          "css=button:has-text('Mis facturas electrónicas')",
+          "css=span:has-text('Mis facturas electrónicas')"
+        ]
+      },
+      {
+        "type": "waitForURL",
+        "pattern": "facturas-electronicas-agrupadas\\.jsf"
+      },
+      {
+        "type": "assertOnPage",
+        "anyText": ["Facturas electrónicas"]
+      }
+    ]
+  },
+
+
 
   "invoice_open": {
     "steps": [
