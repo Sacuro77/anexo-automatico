@@ -127,6 +127,79 @@
     ]
   },
 
+  "anexo_open_anexos_home": {
+    "steps": [
+      {
+        "type": "ensureSidebarOpen",
+        "hamburger": "button#sri-menu",
+        "sidebar1": "#mySidebar",
+        "sidebar2": "#mySidebar2"
+      },
+      {
+        "type": "clickAny",
+        "selectors": [
+          "css=#mySidebar a.ui-panelmenu-header-link:has-text('ANEXOS')",
+          "css=#mySidebar span.ui-menuitem-text:has-text('ANEXOS')"
+        ]
+      },
+      {
+        "type": "clickAny",
+        "selectors": [
+          "css=#mySidebar a.ui-menuitem-link:has-text('Anexo de gastos personales en línea')",
+          "css=#mySidebar span.ui-menuitem-text:has-text('Anexo de gastos personales en línea')"
+        ]
+      },
+      {
+        "type": "clickAny",
+        "logUrlAfter": true,
+        "selectors": [
+          "css=#mySidebar a.ui-menuitem-link:has-text('Generación anexo')",
+          "css=#mySidebar a.ui-menuitem-link[href*='tportal-internet/accederAplicacion.jspa?redireccion=101&idGrupo=98']",
+          "css=#mySidebar a.ui-menuitem-link[href*='tportal-internet/accederAplicacion.jspa?redireccion=101']"
+        ]
+      },
+      {
+        "type": "waitForURL",
+        "timeout": 60000,
+        "pattern": "anexo-gastos-personales\\/anexos\\.jsf|\\/anexos\\.jsf"
+      },
+      {
+        "type": "assertOnPage",
+        "urlPattern": "anexo-gastos-personales\\/anexos\\.jsf|\\/anexos\\.jsf",
+        "anyText": ["Anexos"]
+      }
+    ]
+  },
+
+  "anexo_open_editar_anexo_2025": {
+    "steps": [
+      {
+        "type": "assertOnPage",
+        "urlPattern": "anexo-gastos-personales\\/anexos\\.jsf|\\/anexos\\.jsf",
+        "anyText": ["Anexos"]
+      },
+      {
+        "type": "clickRowAction",
+        "table": "css=table#anexos\\:lista-anexos",
+        "rowText": "2025",
+        "actionSelectors": [
+          "css=a:has-text('Editar anexo')",
+          "css=a:has-text('Editar')",
+          "css=button:has-text('Editar anexo')",
+          "css=button:has-text('Editar')"
+        ]
+      },
+      {
+        "type": "waitForURL",
+        "pattern": "editar-anexo\\.jsf"
+      },
+      {
+        "type": "assertOnPage",
+        "urlPattern": "editar-anexo\\.jsf",
+        "anyText": ["Anexo"]
+      }
+    ]
+  },
 
   "anexo_open_facturas_electronicas": {
     "steps": [
@@ -149,7 +222,7 @@
       {
         "type": "assertOnPage",
         "urlPattern": "facturas-electronicas-agrupadas\\.jsf",
-        "anyText": ["Facturas electrónicas"]
+        "anyText": ["Facturas electrónicas por proveedor", "Facturas electrónicas"]
       }
     ]
   },
