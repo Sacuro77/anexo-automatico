@@ -994,6 +994,24 @@ async function runApplyConfirm(config, action) {
   await state.page.click(selector, { timeout: 15000 });
 }
 
+async function runNamedAction(actionName, vars = {}) {
+  const safeName = actionName ? String(actionName).trim() : "";
+  if (!safeName) {
+    throw new Error("Missing actionName");
+  }
+  const safeVars = vars && typeof vars === "object" ? vars : {};
+  console.log(`runAction: ${safeName} vars=${JSON.stringify(safeVars)}`);
+
+  const action = ensureAssistedPreconditions();
+  const config = await requireConfigForAction(safeName);
+  const actionConfig = config ? config[safeName] : null;
+  if (!actionConfig || !Array.isArray(actionConfig.steps) || actionConfig.steps.length === 0) {
+    throw new Error(`Config requerida: ${safeName}.steps`);
+  }
+  const context = buildActionContext(action, safeVars);
+  return runStepSequence(actionConfig.steps, context);
+}
+
 ipcMain.handle("agent:openBrowser", async (_event, payload) => {
   const { baseUrl, token, importacionId } = payload;
   return runStep(
@@ -1300,6 +1318,35 @@ ipcMain.handle("agent:applyConfirm", async (_event, payload) => {
           currentIndex: state.planIndex,
           currentItem: getCurrentAction(state.plan, state.planIndex)
         }
+      };
+    }
+  );
+});
+
+ipcMain.handle("agent:runAction", async (_event, payload) => {
+  const { baseUrl, token, importacionId, actionName, vars } = payload;
+  const safeName = actionName ? String(actionName).trim() : "";
+  const safeVars = vars && typeof vars === "object" ? vars : {};
+  if (!safeName) {
+    throw new Error("Missing actionName");
+  }
+  return runStep(
+    {
+      baseUrl,
+      token,
+      importacionId,
+      step: safeName,
+      message: `Action ${safeName} executed`,
+      eventExtra: {
+        action_name: safeName,
+        vars: safeVars
+      }
+    },
+    async () => {
+      const result = await runNamedAction(safeName, safeVars);
+      return {
+        snapshot: getStateSnapshot(),
+        logs: result?.logs ?? []
       };
     }
   );

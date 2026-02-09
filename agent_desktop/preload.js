@@ -25,6 +25,14 @@ contextBridge.exposeInMainWorld("agentApi", {
     ipcRenderer.invoke("agent:applyConfirm", { baseUrl, token, importacionId }),
   screenshot: (baseUrl, token, importacionId, label) =>
     ipcRenderer.invoke("agent:screenshot", { baseUrl, token, importacionId, label }),
+  runAction: (baseUrl, token, importacionId, actionName, vars = {}) =>
+    ipcRenderer.invoke("agent:runAction", {
+      baseUrl,
+      token,
+      importacionId,
+      actionName,
+      vars
+    }),
   postEvent: (baseUrl, token, eventPayload) =>
     ipcRenderer.invoke("agent:postEvent", { baseUrl, token, eventPayload })
 });
