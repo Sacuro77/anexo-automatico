@@ -488,8 +488,11 @@ async function requireConfigForAction(actionName) {
 }
 
 function buildStepContext(action, config) {
+  const periodoTarget =
+    (action && (action.periodoTarget || action.periodo_target || action.periodo)) || "";
   return buildActionContext(action, {
-    target_url_login: config && config.target_url_login ? config.target_url_login : ""
+    target_url_login: config && config.target_url_login ? config.target_url_login : "",
+    periodoTarget
   });
 }
 
@@ -656,6 +659,47 @@ async function runStepSequence(steps, context, options = {}) {
           throw new Error(`clickAny: none worked: ${JSON.stringify(step.selectors)}`);
         }
 
+        break;
+      }
+      case "trySteps": {
+        if (!Array.isArray(step.steps) || step.steps.length === 0) {
+          throw new Error("trySteps.steps must be a non-empty array.");
+        }
+        if (!Array.isArray(step.fallbackSteps) || step.fallbackSteps.length === 0) {
+          throw new Error("trySteps.fallbackSteps must be a non-empty array.");
+        }
+        if (step.log) {
+          console.log(`[trySteps] ${step.log}`);
+        }
+
+        let primaryError = null;
+        try {
+          await runStepSequence(step.steps, context, options);
+          break;
+        } catch (error) {
+          primaryError = error;
+          const detail =
+            error && (error.name || error.message)
+              ? error.name || error.message
+              : String(error);
+          console.log(`[trySteps] primary failed -> running fallback: ${detail}`);
+        }
+
+        try {
+          await runStepSequence(step.fallbackSteps, context, options);
+        } catch (fallbackError) {
+          const primaryDetail =
+            primaryError && (primaryError.name || primaryError.message)
+              ? primaryError.name || primaryError.message
+              : String(primaryError);
+          const fallbackDetail =
+            fallbackError && (fallbackError.name || fallbackError.message)
+              ? fallbackError.name || fallbackError.message
+              : String(fallbackError);
+          throw new Error(
+            `trySteps failed. primary=${primaryDetail} | fallback=${fallbackDetail}`
+          );
+        }
         break;
       }
       case "fill":

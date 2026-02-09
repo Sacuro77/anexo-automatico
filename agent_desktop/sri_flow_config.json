@@ -53,6 +53,80 @@
   ]
 },
 
+  "anexo_period_ensure": {
+    "steps": [
+      {
+        "type": "assertOnPage",
+        "urlPattern": "anexo-gastos-personales\\/anexos\\.jsf|\\/anexos\\.jsf",
+        "anyText": ["Anexos"]
+      },
+      {
+        "type": "trySteps",
+        "log": "anexo_period_ensure periodoTarget={{periodoTarget}}",
+        "steps": [
+          {
+            "type": "clickRowAction",
+            "table": "css=table#anexos\\:lista-anexos",
+            "rowText": "{{periodoTarget}}",
+            "actionSelectors": [
+              "css=a:has-text('Editar anexo')",
+              "css=a:has-text('Editar')",
+              "css=button:has-text('Editar anexo')",
+              "css=button:has-text('Editar')"
+            ]
+          }
+        ],
+        "fallbackSteps": [
+          {
+            "type": "clickAny",
+            "selectors": [
+              "css=a.btn.btn-sm.btn-primary:has-text('Nuevo')",
+              "css=a[href*='nuevo-anexo.jsf']:has-text('Nuevo')"
+            ]
+          },
+          {
+            "type": "assertOnPage",
+            "urlPattern": "nuevo-anexo\\.jsf",
+            "anyText": ["Anexo"]
+          },
+          {
+            "type": "assertOnPage",
+            "selector": "css=select#reg_periodo"
+          },
+          {
+            "type": "select",
+            "selector": "css=select#reg_periodo",
+            "label": "{{periodoTarget}}"
+          },
+          {
+            "type": "assertOnPage",
+            "selector": "css=input#reg_crear"
+          },
+          {
+            "type": "click",
+            "selector": "css=input#reg_crear"
+          },
+          {
+            "type": "assertOnPage",
+            "urlPattern": "anexo-gastos-personales\\/anexos\\.jsf|\\/anexos\\.jsf",
+            "anyText": ["Anexos"]
+          },
+          {
+            "type": "clickRowAction",
+            "table": "css=table#anexos\\:lista-anexos",
+            "rowText": "{{periodoTarget}}",
+            "actionSelectors": [
+              "css=a:has-text('Editar anexo')",
+              "css=a:has-text('Editar')",
+              "css=button:has-text('Editar anexo')",
+              "css=button:has-text('Editar')"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
 
 
   "invoice_open": {
