@@ -156,6 +156,27 @@
 
 
 
+  "proveedor_open_by_ruc": {
+    "steps": [
+      {
+        "type": "assertOnPage",
+        "urlPattern": "facturas-electronicas-agrupadas\\.jsf",
+        "anyText": ["Facturas electrónicas"]
+      },
+      {
+        "type": "clickAny",
+        "selectors": [
+          "css=table a[href*='facturas-electronicas.jsf'][href*='emisor={{ruc}}']",
+          "css=table a:has-text('{{ruc}}')"
+        ]
+      },
+      {
+        "type": "waitForURL",
+        "pattern": "facturas-electronicas\\.jsf\\?emisor="
+      }
+    ]
+  },
+
   "invoice_open": {
     "steps": [
       { "type": "fill", "selector": "REEMPLAZAR_SELECTOR_CLAVE", "text": "{{clave_acceso}}" },
