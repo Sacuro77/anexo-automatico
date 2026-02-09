@@ -188,18 +188,30 @@ async function handleGoto() {
       (lastSnapshot && lastSnapshot.currentUrl) || statusUrl.textContent || "";
     const normalizedUrl = String(currentUrl).trim().toLowerCase();
     const onEditarAnexo = normalizedUrl.includes("editar-anexo.jsf");
-    if (!onEditarAnexo) {
+    const onAnexosTable = normalizedUrl.includes("anexos.jsf");
+    const inAnexoModule = normalizedUrl.includes("anexo-gastos-personales");
+
+    let actionName = null;
+    if (onEditarAnexo) {
+      actionName = "anexo_open_facturas_electronicas";
+    } else if (onAnexosTable) {
+      actionName = "anexo_open_editar_anexo_2025";
+    } else if (!inAnexoModule) {
+      actionName = "anexo_open_anexos_home";
+    }
+
+    if (!actionName) {
       throw new Error(
-        "Target URL requerido (o estar en Editar Anexo para abrir facturas electrónicas)."
+        "Target URL requerido (o estar en Anexos/Editar para continuar)."
       );
     }
 
-    appendLog("Ejecutando action: anexo_open_facturas_electronicas...");
+    appendLog(`Ejecutando action: ${actionName}...`);
     const data = await window.agentApi.runAction(
       baseUrl,
       token,
       importacionId,
-      "anexo_open_facturas_electronicas",
+      actionName,
       {}
     );
     appendLog("Action ejecutada", data.result);
