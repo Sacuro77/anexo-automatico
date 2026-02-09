@@ -138,9 +138,8 @@
       {
         "type": "clickAny",
         "selectors": [
-          "css=a:has-text('Mis facturas electrónicas')",
-          "css=button:has-text('Mis facturas electrónicas')",
-          "css=span:has-text('Mis facturas electrónicas')"
+          "css=a[href*='facturas-electronicas-agrupadas.jsf']",
+          "css=a:has-text('Mis facturas electrónicas')"
         ]
       },
       {
@@ -149,6 +148,7 @@
       },
       {
         "type": "assertOnPage",
+        "urlPattern": "facturas-electronicas-agrupadas\\.jsf",
         "anyText": ["Facturas electrónicas"]
       }
     ]

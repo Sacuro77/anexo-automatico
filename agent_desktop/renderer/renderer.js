@@ -43,6 +43,8 @@ const assistState = {
   pendingItem: null
 };
 
+let lastSnapshot = null;
+
 function appendLog(message, data) {
   const timestamp = new Date().toISOString();
   let entry = `[${timestamp}] ${message}`;
@@ -69,6 +71,7 @@ function updateStatus(status) {
   statusPage.textContent = status.pageReady ? "lista" : "no";
   statusLogin.textContent = status.loggedIn ? "ok" : "pendiente";
   statusUrl.textContent = status.currentUrl || "-";
+  lastSnapshot = status;
 }
 
 function updateTokenStatus(data) {
@@ -178,10 +181,35 @@ async function handleLoggedIn() {
 async function handleGoto() {
   const { baseUrl, token, importacionId, targetUrl } = getInputs();
   requireBaseInputs({ baseUrl, token, importacionId });
-  requireValue(targetUrl, "target URL");
+  const trimmedUrl = targetUrl.trim();
 
-  appendLog(`Navegando a ${targetUrl}...`);
-  const data = await window.agentApi.goto(baseUrl, token, importacionId, targetUrl);
+  if (!trimmedUrl) {
+    const currentUrl =
+      (lastSnapshot && lastSnapshot.currentUrl) || statusUrl.textContent || "";
+    const normalizedUrl = String(currentUrl).trim().toLowerCase();
+    const onEditarAnexo = normalizedUrl.includes("editar-anexo.jsf");
+    if (!onEditarAnexo) {
+      throw new Error(
+        "Target URL requerido (o estar en Editar Anexo para abrir facturas electrónicas)."
+      );
+    }
+
+    appendLog("Ejecutando action: anexo_open_facturas_electronicas...");
+    const data = await window.agentApi.runAction(
+      baseUrl,
+      token,
+      importacionId,
+      "anexo_open_facturas_electronicas",
+      {}
+    );
+    appendLog("Action ejecutada", data.result);
+    updateStatus(data.result && data.result.snapshot ? data.result.snapshot : data.result);
+    updateLastEvent(data.eventPayload, data.event);
+    return;
+  }
+
+  appendLog(`Navegando a ${trimmedUrl}...`);
+  const data = await window.agentApi.goto(baseUrl, token, importacionId, trimmedUrl);
   appendLog("Navegacion OK", data);
   updateStatus(data.result);
 }
