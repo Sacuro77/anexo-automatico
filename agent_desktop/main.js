@@ -74,6 +74,44 @@ function clipLog(value, max = 200) {
   return `${text.slice(0, max)}...`;
 }
 
+function formatStepDetail(step) {
+  if (!step || typeof step !== "object") {
+    return "";
+  }
+  const fields = [];
+  if (step.selector) {
+    fields.push(`selector=${step.selector}`);
+  }
+  if (Array.isArray(step.selectors)) {
+    fields.push(`selectors=${JSON.stringify(step.selectors)}`);
+  }
+  if (step.table) {
+    fields.push(`table=${step.table}`);
+  }
+  if (step.rowText) {
+    fields.push(`rowText=${step.rowText}`);
+  }
+  if (step.cellIndex !== undefined && step.cellIndex !== null) {
+    fields.push(`cellIndex=${step.cellIndex}`);
+  }
+  if (step.cellText) {
+    fields.push(`cellText=${step.cellText}`);
+  }
+  if (step.match) {
+    fields.push(`match=${step.match}`);
+  }
+  if (Array.isArray(step.targetSelectors)) {
+    fields.push(`targetSelectors=${JSON.stringify(step.targetSelectors)}`);
+  }
+  if (Array.isArray(step.actionSelectors)) {
+    fields.push(`actionSelectors=${JSON.stringify(step.actionSelectors)}`);
+  }
+  if (step.key) {
+    fields.push(`key=${step.key}`);
+  }
+  return fields.join(" ");
+}
+
 async function findRowByText(tableLocator, rowText, timeout, logPrefix) {
   const target = normText(rowText);
   if (!target) {
@@ -438,7 +476,8 @@ async function runStepSequence(steps, context, options = {}) {
     const timeout = step.timeout || timeoutDefault;
     logs.push({ index, type: stepType, ts: new Date().toISOString(), status: "start" });
 
-    switch (stepType) {
+    try {
+      switch (stepType) {
       case "assertOnPage":
         await assertOnPage(page, step, timeout);
         break;
@@ -718,6 +757,19 @@ async function runStepSequence(steps, context, options = {}) {
 
       default:
         throw new Error(`Tipo de step no soportado: ${stepType}`);
+      }
+    } catch (error) {
+      const detail = formatStepDetail(step);
+      const url = page && typeof page.url === "function" ? page.url() : "";
+      const detailChunk = detail ? ` ${detail}` : "";
+      const urlChunk = url ? ` url=${url}` : "";
+      const errorMessage = error && error.message ? error.message : String(error);
+      const wrapped = `[${stepType}]${detailChunk}${urlChunk} | ${errorMessage}`;
+      if (error && typeof error === "object") {
+        error.message = wrapped;
+        throw error;
+      }
+      throw new Error(wrapped);
     }
 
     logs.push({ index, type: stepType, ts: new Date().toISOString(), status: "ok" });
@@ -761,7 +813,13 @@ async function runStep(
   requireValue(importacionId, "importacion_id");
 
   try {
+    if (state.page) {
+      console.log(`[step=${step}] url(before)=${state.page.url()}`);
+    }
     const result = await action();
+    if (state.page) {
+      console.log(`[step=${step}] url(after)=${state.page.url()}`);
+    }
     let eventResponse = null;
     let eventPayload = null;
     if (emitSuccess) {

@@ -74,9 +74,20 @@ Aplicar categoria (detalle de factura):
 4. `applyConfirm` para guardar (confirmación humana).
 5. Verificar toast/mensaje de éxito.
 
+E2E 1 acción (proveedor + claveAcceso + categoria):
+1. openBrowser → login → loadPlan
+2. `provider_open`
+3. `anexo_period_ensure` con `periodoTarget=2025`
+4. `anexo_open_facturas_electronicas`
+5. `proveedor_open_by_ruc` con `ruc=1792049504001`
+6. `invoice_open_by_clave` con `claveAcceso=CLAVE_49_DIGITOS`
+7. `applyPrepare` (verificar selección sin guardar)
+8. `applyConfirm` (confirmación humana)
+
 ## Tests
 
 Run: `npm test`
 Self-check (clickTableCellLink fallback): `npm run selfcheck:click-table-cell`
 Self-check (invoice_open_by_clave): `npm run selfcheck:invoice-open-by-clave`
 Self-check (apply categoria): `npm run selfcheck:apply-categoria`
+Self-check (e2e single action): `npm run selfcheck:e2e-single-action`
