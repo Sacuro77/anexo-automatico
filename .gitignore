@@ -16,3 +16,8 @@ dist/
 build/
 *.log
 agent_desktop/node_modules/
+# Agent runtime / artifacts
+tmp/
+agent_desktop/tmp/
+agent_desktop_screenshots/
+agent_desktop/screenshots/
