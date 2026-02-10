@@ -61,7 +61,14 @@ Proveedor por RUC (facturas-electronicas-agrupadas.jsf):
 6. Config uses `cellIndex=1` for the RUC column; if no anchors are found the step falls back to clicking the cell and then the row.
 7. If it fails, capture the screenshot evidence and the step logs.
 
+Factura por claveAcceso (facturas-electronicas.jsf):
+1. Estar en `facturas-electronicas.jsf?emisor=...`
+2. runAction: `invoice_open_by_clave` con `claveAcceso=CLAVE_49_DIGITOS`
+3. Confirmar que se abre el detalle (URL con `clave` o sección de detalle visible).
+4. Si falla, guardar screenshot y logs del step.
+
 ## Tests
 
 Run: `npm test`
 Self-check (clickTableCellLink fallback): `npm run selfcheck:click-table-cell`
+Self-check (invoice_open_by_clave): `npm run selfcheck:invoice-open-by-clave`
