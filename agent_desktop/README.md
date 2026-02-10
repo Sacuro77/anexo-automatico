@@ -52,6 +52,16 @@ Supported step types: `goto`, `click`, `fill`, `select`, `waitForSelector`, `wai
 - Confirm the modal appears before the final apply click.
 - If a step fails, check the evidence path logged in the error message.
 
+Proveedor por RUC (facturas-electronicas-agrupadas.jsf):
+1. runAction: `anexo_open_anexos_home`
+2. runAction: `anexo_period_ensure` with `periodoTarget=2025`
+3. runAction: `anexo_open_facturas_electronicas`
+4. providerOpenByRuc with `ruc=1792049504001` (or another existing RUC)
+5. Confirm the URL changes to `facturas-electronicas.jsf?emisor=...`
+6. Config uses `cellIndex=1` for the RUC column; if no anchors are found the step falls back to clicking the cell and then the row.
+7. If it fails, capture the screenshot evidence and the step logs.
+
 ## Tests
 
 Run: `npm test`
+Self-check (clickTableCellLink fallback): `npm run selfcheck:click-table-cell`

@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node tests/plan_runner.test.js"
+    "test": "node tests/plan_runner.test.js",
+    "selfcheck:click-table-cell": "node tests/clickTableCellLink.selfcheck.js"
   },
   "dependencies": {
     "electron": "^30.0.0",
