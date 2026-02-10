@@ -12,6 +12,7 @@ const {
   validateConfigForAction,
   validateFlowConfig
 } = require("./step_runner");
+const { clickTableCellLink } = require("./step_clicks");
 
 let mainWindow = null;
 
@@ -289,104 +290,6 @@ async function clickRowAction(page, step, timeout) {
   }
 
   throw new Error(`clickRowAction: none worked: ${JSON.stringify(step.actionSelectors)}`);
-}
-
-async function clickTableCellLink(page, step, timeout) {
-  requireValue(step.table, "step.table");
-  requireValue(step.rowText, "step.rowText");
-
-  const linkSelectors =
-    Array.isArray(step.linkSelectors) && step.linkSelectors.length
-      ? step.linkSelectors
-      : ["a", "button"];
-
-  console.log(
-    `[clickTableCellLink] table=${step.table} rowText="${step.rowText}" cellIndex=${
-      step.cellIndex === undefined || step.cellIndex === null ? "n/a" : step.cellIndex
-    } linkSelectors=${JSON.stringify(linkSelectors)}`
-  );
-
-  const table = page.locator(step.table).first();
-  await table.waitFor({ state: "attached", timeout });
-  const { row } = await findRowByText(table, step.rowText, timeout, "clickTableCellLink");
-
-  let scope = row;
-  if (step.cellIndex !== undefined && step.cellIndex !== null) {
-    const cells = row.locator("td,th");
-    const cellCount = await cells.count();
-    console.log(`[clickTableCellLink] cellCount=${cellCount}`);
-    if (step.cellIndex < 0 || step.cellIndex >= cellCount) {
-      throw new Error(
-        `clickTableCellLink: cellIndex ${step.cellIndex} fuera de rango (0-${Math.max(
-          0,
-          cellCount - 1
-        )})`
-      );
-    }
-    scope = cells.nth(step.cellIndex);
-  }
-
-  for (const selector of linkSelectors) {
-    const candidates = scope.locator(selector);
-    const count = await candidates.count();
-    console.log(`[clickTableCellLink] scanning selector=${selector} count=${count}`);
-    for (let i = 0; i < count; i += 1) {
-      const candidate = candidates.nth(i);
-      let visible = false;
-      try {
-        visible = await candidate.isVisible();
-      } catch (error) {
-        visible = false;
-      }
-      if (!visible) {
-        continue;
-      }
-
-      try {
-        await candidate.scrollIntoViewIfNeeded({ timeout });
-      } catch (error) {
-        const detail =
-          error && (error.name || error.message)
-            ? error.name || error.message
-            : String(error);
-        console.log(`[clickTableCellLink] scroll failed: ${selector} - ${detail}`);
-      }
-
-      try {
-        await candidate.click({ timeout, force: true });
-        console.log(
-          `[clickTableCellLink] clicked selector=${selector} index=${i}`
-        );
-        return;
-      } catch (error) {
-        const detail =
-          error && (error.name || error.message)
-            ? error.name || error.message
-            : String(error);
-        console.log(`[clickTableCellLink] click failed: ${selector} - ${detail}`);
-      }
-
-      try {
-        await candidate.evaluate((el) => el.click());
-        console.log(
-          `[clickTableCellLink] clicked via evaluate selector=${selector} index=${i}`
-        );
-        return;
-      } catch (error) {
-        const detail =
-          error && (error.name || error.message)
-            ? error.name || error.message
-            : String(error);
-        console.log(`[clickTableCellLink] evaluate failed: ${selector} - ${detail}`);
-      }
-    }
-  }
-
-  throw new Error(
-    `clickTableCellLink: no se encontro link/button visible. selectors=${JSON.stringify(
-      linkSelectors
-    )}`
-  );
 }
 
 async function requestJson(method, url, token, body) {
