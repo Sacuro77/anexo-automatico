@@ -89,7 +89,13 @@ async function clickTableCellLink(page, step, timeout) {
       ? step.targetSelectors
       : Array.isArray(step.linkSelectors) && step.linkSelectors.length
         ? step.linkSelectors
-        : ["a[href]", "a[onclick]", "button[onclick]", "a", "button"];
+        : [
+          "a[href*='facturas-electronicas.jsf'][href*='emisor=']",
+          "a[onclick]",
+          "button[onclick]",
+          "a",
+          "button"
+        ];
 
   const hasCellIndex = step.cellIndex !== undefined && step.cellIndex !== null;
   const cellIndex = hasCellIndex ? Number(step.cellIndex) : null;
@@ -199,8 +205,13 @@ async function clickTableCellLink(page, step, timeout) {
         )})`
       );
     }
-    scope = cells.nth(cellIndex);
+    matchedCell = cells.nth(cellIndex);
+    scope = matchedCell;
+  } else {
+    console.log("[clickTableCellLink] cellIndex no definido; usando scope de fila");
   }
+
+  const clickTimeout = Math.min(timeout || 15000, 15000);
 
   for (const selector of linkSelectors) {
     const candidates = scope.locator(selector);
@@ -228,7 +239,7 @@ async function clickTableCellLink(page, step, timeout) {
       }
 
       try {
-        await candidate.scrollIntoViewIfNeeded({ timeout });
+        await candidate.scrollIntoViewIfNeeded({ timeout: clickTimeout });
       } catch (error) {
         const detail =
           error && (error.name || error.message)
@@ -238,7 +249,7 @@ async function clickTableCellLink(page, step, timeout) {
       }
 
       try {
-        await candidate.click({ timeout, force: true });
+        await candidate.click({ timeout: clickTimeout, force: true });
         console.log(
           `[clickTableCellLink] clicked selector=${selector} index=${i}`
         );
@@ -251,7 +262,14 @@ async function clickTableCellLink(page, step, timeout) {
           error && (error.name || error.message)
             ? error.name || error.message
             : String(error);
-        console.log(`[clickTableCellLink] click failed: ${selector} - ${detail}`);
+        let outer = "";
+        try {
+          outer = await candidate.evaluate((el) => el.outerHTML);
+        } catch (outerError) {
+          outer = "";
+        }
+        const outerChunk = outer ? ` outerHTML=${clipLog(outer)}` : "";
+        console.log(`[clickTableCellLink] click failed: ${selector} - ${detail}${outerChunk}`);
       }
 
       try {
@@ -268,7 +286,14 @@ async function clickTableCellLink(page, step, timeout) {
           error && (error.name || error.message)
             ? error.name || error.message
             : String(error);
-        console.log(`[clickTableCellLink] evaluate failed: ${selector} - ${detail}`);
+        let outer = "";
+        try {
+          outer = await candidate.evaluate((el) => el.outerHTML);
+        } catch (outerError) {
+          outer = "";
+        }
+        const outerChunk = outer ? ` outerHTML=${clipLog(outer)}` : "";
+        console.log(`[clickTableCellLink] evaluate failed: ${selector} - ${detail}${outerChunk}`);
       }
     }
   }
