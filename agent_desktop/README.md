@@ -67,8 +67,16 @@ Factura por claveAcceso (facturas-electronicas.jsf):
 3. Confirmar que se abre el detalle (URL con `clave` o sección de detalle visible).
 4. Si falla, guardar screenshot y logs del step.
 
+Aplicar categoria (detalle de factura):
+1. Estar en el detalle de la factura (desde `invoice_open_by_clave`).
+2. `applyPrepare` con `categoria_nombre` o `categoria_id` en el plan.
+3. Verificar que se selecciona la categoria sugerida y se copia el subtotal (sin guardar).
+4. `applyConfirm` para guardar (confirmación humana).
+5. Verificar toast/mensaje de éxito.
+
 ## Tests
 
 Run: `npm test`
 Self-check (clickTableCellLink fallback): `npm run selfcheck:click-table-cell`
 Self-check (invoice_open_by_clave): `npm run selfcheck:invoice-open-by-clave`
+Self-check (apply categoria): `npm run selfcheck:apply-categoria`
