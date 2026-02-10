@@ -350,14 +350,39 @@
   },
   "apply": {
     "steps_before_confirm": [
-      { "type": "waitForSelector", "selector": "REEMPLAZAR_SELECTOR_FORM" }
+      {
+        "type": "assertOnPage",
+        "urlPattern": "facturas-electronicas\\.jsf",
+        "anyText": ["Facturas electrónicas"]
+      },
+      {
+        "type": "waitForSelector",
+        "selector": "css=select#categoria, select[id*='categoria'], select[name*='categoria']"
+      },
+      {
+        "type": "clickAny",
+        "logUrl": true,
+        "selectors": [
+          "css=section:has-text('Categor') button.btn-primary:has-text('Copiar')",
+          "css=section:has-text('Categor') a.btn-primary:has-text('Copiar')",
+          "css=button.btn-primary:has-text('Copiar')",
+          "css=a.btn-primary:has-text('Copiar')",
+          "css=button[aria-label*='subtotal']",
+          "css=button:has-text('Subtotal')",
+          "css=button:has-text('Copiar')",
+          "css=a:has-text('Copiar')"
+        ]
+      }
     ],
-    "category_selector": "REEMPLAZAR_SELECTOR_CATEGORIA",
+    "category_selector": "css=select#categoria, select[id*='categoria'], select[name*='categoria']",
     "category_mode": "select",
     "category_map": {
       "123": { "value": "123" },
       "Categoria Ejemplo": { "label": "Categoria Ejemplo" }
     },
-    "confirm_selector": "REEMPLAZAR_SELECTOR_GUARDAR"
+    "confirm_selector": "css=button:has-text('Guardar'), button:has-text('Aplicar'), input[type='submit'][value*='Guardar'], input[type='submit'][value*='Aplicar']",
+    "confirm_success_selector": "css=.ui-growl-message, .ui-messages-info, .ui-messages-success, .toast, div:has-text('Guardado'), span:has-text('Guardado')",
+    "confirm_timeout": 15000,
+    "confirm_success_timeout": 15000
   }
 }

@@ -464,6 +464,12 @@ async function runStepSequence(steps, context, options = {}) {
           throw new Error("step.selectors must be a non-empty array.");
         }
         const timeout = step.timeout ?? 30000;
+        const logUrl = Boolean(step.logUrl);
+        const logUrlBefore = Boolean(step.logUrlBefore) || logUrl;
+        const logUrlAfter = Boolean(step.logUrlAfter) || logUrl;
+        if (logUrlBefore) {
+          console.log(`[clickAny] url(before)=${page.url()}`);
+        }
         let clicked = false;
 
         for (const selector of step.selectors) {
@@ -512,7 +518,7 @@ async function runStepSequence(steps, context, options = {}) {
             }
             await locator.click({ timeout, force: true });
             console.log(`[clickAny] clicked via locator.click: ${selector}`);
-            if (step.logUrlAfter) {
+            if (logUrlAfter) {
               console.log(`[clickAny] url(after)=${page.url()}`);
             }
             clicked = true;
@@ -528,7 +534,7 @@ async function runStepSequence(steps, context, options = {}) {
           try {
             await locator.evaluate((el) => el.click());
             console.log(`[clickAny] clicked via evaluate: ${selector}`);
-            if (step.logUrlAfter) {
+            if (logUrlAfter) {
               console.log(`[clickAny] url(after)=${page.url()}`);
             }
             clicked = true;
@@ -544,7 +550,7 @@ async function runStepSequence(steps, context, options = {}) {
           try {
             await locator.dispatchEvent("click");
             console.log(`[clickAny] clicked via dispatchEvent: ${selector}`);
-            if (step.logUrlAfter) {
+            if (logUrlAfter) {
               console.log(`[clickAny] url(after)=${page.url()}`);
             }
             clicked = true;
@@ -894,7 +900,25 @@ async function runApplyConfirm(config, action) {
   const context = buildStepContext(action, config);
   const selector = interpolateDeep(config.apply.confirm_selector, context);
   requireValue(selector, "apply.confirm_selector");
-  await state.page.click(selector, { timeout: 15000 });
+  const timeout = config.apply.confirm_timeout || 15000;
+  console.log(`[applyConfirm] selector=${selector} url(before)=${state.page.url()}`);
+  await state.page.click(selector, { timeout });
+  console.log(`[applyConfirm] clicked selector=${selector} url(after)=${state.page.url()}`);
+
+  const successSelector =
+    config.apply.confirm_success_selector || config.apply.success_selector || "";
+  const successAnyText =
+    config.apply.confirm_success_anyText || config.apply.success_anyText || null;
+  if (successSelector || successAnyText) {
+    await assertOnPage(
+      state.page,
+      {
+        selector: successSelector || undefined,
+        anyText: successAnyText || undefined
+      },
+      config.apply.confirm_success_timeout || timeout
+    );
+  }
 }
 
 async function runNamedAction(actionName, vars = {}) {
