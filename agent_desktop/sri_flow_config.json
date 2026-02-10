@@ -239,7 +239,7 @@
         "cellText": "{{ruc}}",
         "match": "exact",
         "targetSelectors": [
-          "css=a[href]",
+          "css=a[href*='facturas-electronicas.jsf'][href*='emisor=']",
           "css=a[onclick]",
           "css=button[onclick]",
           "css=a",
@@ -249,6 +249,11 @@
       {
         "type": "waitForURL",
         "pattern": "facturas-electronicas\\.jsf\\?emisor="
+      },
+      {
+        "type": "assertOnPage",
+        "urlPattern": "facturas-electronicas\\.jsf\\?emisor=",
+        "anyText": ["Facturas electrónicas"]
       }
     ]
   },
