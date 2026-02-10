@@ -239,7 +239,7 @@
       {
         "type": "clickTableCellLink",
         "table": "css=table#anchoDoc",
-        "cellIndex": 1,
+        "cellIndex": 0,
         "cellText": "{{ruc}}",
         "match": "exact",
         "targetSelectors": [

@@ -58,7 +58,7 @@ Proveedor por RUC (facturas-electronicas-agrupadas.jsf):
 3. runAction: `anexo_open_facturas_electronicas`
 4. providerOpenByRuc with `ruc=1792049504001` (or another existing RUC)
 5. Confirm the URL changes to `facturas-electronicas.jsf?emisor=...`
-6. Config uses `cellIndex=1` for the RUC column; if no anchors are found the step falls back to clicking the cell and then the row.
+6. Config uses `cellIndex=0` for the RUC column; if no anchors are found the step falls back to clicking the cell and then the row.
 7. If it fails, capture the screenshot evidence and the step logs.
 
 Factura por claveAcceso (facturas-electronicas.jsf):
@@ -88,6 +88,7 @@ E2E 1 acción (proveedor + claveAcceso + categoria):
 
 Run: `npm test`
 Self-check (clickTableCellLink fallback): `npm run selfcheck:click-table-cell`
+Self-check (proveedor_open_by_ruc): `npm run selfcheck:proveedor-open-by-ruc`
 Self-check (invoice_open_by_clave): `npm run selfcheck:invoice-open-by-clave`
 Self-check (apply categoria): `npm run selfcheck:apply-categoria`
 Self-check (e2e single action): `npm run selfcheck:e2e-single-action`

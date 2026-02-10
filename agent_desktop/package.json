@@ -7,6 +7,7 @@
     "start": "electron .",
     "test": "node tests/plan_runner.test.js",
     "selfcheck:click-table-cell": "node tests/clickTableCellLink.selfcheck.js",
+    "selfcheck:proveedor-open-by-ruc": "node tests/proveedor_open_by_ruc.selfcheck.js",
     "selfcheck:invoice-open-by-clave": "node tests/invoice_open_by_clave.selfcheck.js",
     "selfcheck:apply-categoria": "node tests/apply_categoria.selfcheck.js",
     "selfcheck:e2e-single-action": "node tests/e2e_single_action.selfcheck.js"
