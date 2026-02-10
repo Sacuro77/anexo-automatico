@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron .",
     "test": "node tests/plan_runner.test.js",
-    "selfcheck:click-table-cell": "node tests/clickTableCellLink.selfcheck.js"
+    "selfcheck:click-table-cell": "node tests/clickTableCellLink.selfcheck.js",
+    "selfcheck:invoice-open-by-clave": "node tests/invoice_open_by_clave.selfcheck.js"
   },
   "dependencies": {
     "electron": "^30.0.0",
