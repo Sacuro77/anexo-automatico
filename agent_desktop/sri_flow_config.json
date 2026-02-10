@@ -257,6 +257,91 @@
     ]
   },
 
+  "invoice_open_by_clave": {
+    "steps": [
+      {
+        "type": "assertOnPage",
+        "urlPattern": "facturas-electronicas\\.jsf",
+        "anyText": ["Facturas electrónicas"]
+      },
+      {
+        "type": "trySteps",
+        "log": "invoice_open_by_clave: intentar filtro por clave",
+        "steps": [
+          {
+            "type": "waitForSelector",
+            "timeout": 4000,
+            "selector": "css=input#filtro, css=input#filter, css=input[id*='filtro'], css=input[id*='filter'], css=input[placeholder*='Clave']"
+          },
+          {
+            "type": "fill",
+            "selector": "css=input#filtro, css=input#filter, css=input[id*='filtro'], css=input[id*='filter'], css=input[placeholder*='Clave']",
+            "text": "{{claveAcceso}}"
+          },
+          {
+            "type": "press",
+            "selector": "css=input#filtro, css=input#filter, css=input[id*='filtro'], css=input[id*='filter'], css=input[placeholder*='Clave']",
+            "key": "Enter"
+          },
+          {
+            "type": "clickAny",
+            "selectors": [
+              "css=button:has-text('Buscar')",
+              "css=input[type='submit'][value*='Buscar']",
+              "css=a:has-text('Buscar')"
+            ]
+          }
+        ],
+        "fallbackSteps": [
+          {
+            "type": "assertOnPage",
+            "urlPattern": "facturas-electronicas\\.jsf"
+          }
+        ]
+      },
+      {
+        "type": "trySteps",
+        "log": "invoice_open_by_clave: buscar por celda (match exact) y fallback por fila",
+        "steps": [
+          {
+            "type": "clickTableCellLink",
+            "table": "css=table#anchoDoc",
+            "cellIndex": 1,
+            "cellText": "{{claveAcceso}}",
+            "match": "includes",
+            "logUrl": true,
+            "targetSelectors": [
+              "css=a[href]",
+              "css=a[onclick]",
+              "css=button[onclick]",
+              "css=a",
+              "css=button"
+            ]
+          }
+        ],
+        "fallbackSteps": [
+          {
+            "type": "clickTableCellLink",
+            "table": "css=table#anchoDoc",
+            "rowText": "{{claveAcceso}}",
+            "logUrl": true,
+            "targetSelectors": [
+              "css=a[href]",
+              "css=a[onclick]",
+              "css=button[onclick]",
+              "css=a",
+              "css=button"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "waitForURL",
+        "pattern": "facturas-electronicas\\.jsf\\?.*(clave|claveAcceso)="
+      }
+    ]
+  },
+
   "invoice_open": {
     "steps": [
       { "type": "fill", "selector": "REEMPLAZAR_SELECTOR_CLAVE", "text": "{{clave_acceso}}" },

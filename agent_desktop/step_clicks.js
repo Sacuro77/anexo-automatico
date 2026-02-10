@@ -96,6 +96,7 @@ async function clickTableCellLink(page, step, timeout) {
   if (hasCellIndex && !Number.isInteger(cellIndex)) {
     throw new Error(`clickTableCellLink cellIndex invalido: ${step.cellIndex}`);
   }
+  const logUrl = Boolean(step.logUrl);
 
   console.log(
     `[clickTableCellLink] table=${step.table} rowText="${
@@ -104,6 +105,9 @@ async function clickTableCellLink(page, step, timeout) {
       hasCellText ? step.cellText : "n/a"
     }" match=${matchMode} linkSelectors=${JSON.stringify(linkSelectors)}`
   );
+  if (logUrl) {
+    console.log(`[clickTableCellLink] url(before)=${page.url()}`);
+  }
 
   const table = page.locator(step.table).first();
   await table.waitFor({ state: "attached", timeout });
@@ -127,6 +131,9 @@ async function clickTableCellLink(page, step, timeout) {
     const target = normText(step.cellText);
     if (!target) {
       throw new Error("clickTableCellLink cellText empty or invalid.");
+    }
+    if (logUrl) {
+      console.log(`[clickTableCellLink] cell target="${target}"`);
     }
 
     const summaries = [];
@@ -235,6 +242,9 @@ async function clickTableCellLink(page, step, timeout) {
         console.log(
           `[clickTableCellLink] clicked selector=${selector} index=${i}`
         );
+        if (logUrl) {
+          console.log(`[clickTableCellLink] url(after)=${page.url()}`);
+        }
         return;
       } catch (error) {
         const detail =
@@ -249,6 +259,9 @@ async function clickTableCellLink(page, step, timeout) {
         console.log(
           `[clickTableCellLink] clicked via evaluate selector=${selector} index=${i}`
         );
+        if (logUrl) {
+          console.log(`[clickTableCellLink] url(after)=${page.url()}`);
+        }
         return;
       } catch (error) {
         const detail =
@@ -301,6 +314,9 @@ async function clickTableCellLink(page, step, timeout) {
       try {
         await target.locator.click({ timeout, force: true });
         console.log(`[clickTableCellLink] fallback clicked ${target.label}`);
+        if (logUrl) {
+          console.log(`[clickTableCellLink] url(after)=${page.url()}`);
+        }
         return;
       } catch (error) {
         const detail =
@@ -315,6 +331,9 @@ async function clickTableCellLink(page, step, timeout) {
       try {
         await target.locator.evaluate((el) => el.click());
         console.log(`[clickTableCellLink] fallback clicked via evaluate (${target.label})`);
+        if (logUrl) {
+          console.log(`[clickTableCellLink] url(after)=${page.url()}`);
+        }
         return;
       } catch (error) {
         const detail =
