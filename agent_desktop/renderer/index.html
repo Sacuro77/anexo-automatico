@@ -75,6 +75,14 @@
         background: #ffffff;
       }
 
+      select {
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #cbd5df;
+        font-size: 0.95rem;
+        background: #ffffff;
+      }
+
       .status {
         display: grid;
         gap: 12px;
@@ -367,6 +375,26 @@
             <span>Confianza</span>
             <strong id="planConfianza">-</strong>
           </div>
+        </div>
+      </section>
+
+      <section class="plan">
+        <h2>Ejecucion</h2>
+        <div class="grid">
+          <label>
+            Modo de ejecucion
+            <select id="runMode">
+              <option value="current">Run current plan action</option>
+              <option value="e2e_from_profile">Run e2e_from_profile_assisted</option>
+            </select>
+          </label>
+          <label>
+            Periodo target (E2E)
+            <input id="periodoTarget" type="text" value="2025" />
+          </label>
+        </div>
+        <div class="actions">
+          <button id="btnRunPlan">Ejecutar</button>
         </div>
       </section>
 

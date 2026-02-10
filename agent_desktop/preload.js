@@ -33,6 +33,13 @@ contextBridge.exposeInMainWorld("agentApi", {
       actionName,
       vars
     }),
+  runE2EFromProfile: (baseUrl, token, importacionId, periodoTarget) =>
+    ipcRenderer.invoke("agent:runE2EFromProfile", {
+      baseUrl,
+      token,
+      importacionId,
+      periodoTarget
+    }),
   postEvent: (baseUrl, token, eventPayload) =>
     ipcRenderer.invoke("agent:postEvent", { baseUrl, token, eventPayload })
 });

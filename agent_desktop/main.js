@@ -650,6 +650,33 @@ async function runStepSequence(steps, context, options = {}) {
         }
         break;
       }
+      case "runAction": {
+        const actionName =
+          step.actionName || step.action || step.name;
+        if (!actionName) {
+          throw new Error("runAction requires actionName.");
+        }
+        const vars = step.vars && typeof step.vars === "object" ? step.vars : {};
+        console.log(
+          `[runAction] action=${actionName} vars=${JSON.stringify(vars)} url(before)=${page.url()}`
+        );
+        await runNamedAction(actionName, vars);
+        console.log(`[runAction] action=${actionName} url(after)=${page.url()}`);
+        break;
+      }
+      case "applyPrepare": {
+        const action = options.action || ensureAssistedPreconditions();
+        const config = options.config || (await requireConfigForAction("apply"));
+        await runApplyPrepare(config, action);
+        break;
+      }
+      case "applyConfirm": {
+        const action = options.action || ensureAssistedPreconditions();
+        const config = options.config || (await requireConfigForAction("apply"));
+        await runApplyConfirm(config, action);
+        break;
+      }
+
       case "fill":
         requireValue(step.selector, "step.selector");
         requireValue(step.text, "step.text");
@@ -884,7 +911,7 @@ async function ensureBrowserState() {
 
 async function runProviderOpen(config, action) {
   const context = buildStepContext(action, config);
-  return runStepSequence(config.provider_open.steps, context);
+  return runStepSequence(config.provider_open.steps, context, { config, action });
 }
 
 async function runProviderOpenByRuc(config, action, ruc) {
@@ -896,18 +923,18 @@ async function runProviderOpenByRuc(config, action, ruc) {
     throw new Error("Config requerida: proveedor_open_by_ruc.steps");
   }
   const context = buildActionContext(action, { ruc });
-  return runStepSequence(steps, context);
+  return runStepSequence(steps, context, { config, action });
 }
 
 async function runInvoiceOpen(config, action) {
   const context = buildStepContext(action, config);
-  return runStepSequence(config.invoice_open.steps, context);
+  return runStepSequence(config.invoice_open.steps, context, { config, action });
 }
 
 async function runApplyPrepare(config, action) {
   const context = buildStepContext(action, config);
   if (Array.isArray(config.apply.steps_before_confirm) && config.apply.steps_before_confirm.length) {
-    await runStepSequence(config.apply.steps_before_confirm, context);
+    await runStepSequence(config.apply.steps_before_confirm, context, { config, action });
   }
 
   const page = state.page;
@@ -994,7 +1021,7 @@ async function runNamedAction(actionName, vars = {}) {
     throw new Error(`Config requerida: ${safeName}.steps`);
   }
   const context = buildActionContext(action, safeVars);
-  return runStepSequence(actionConfig.steps, context);
+  return runStepSequence(actionConfig.steps, context, { config, action });
 }
 
 ipcMain.handle("agent:openBrowser", async (_event, payload) => {
@@ -1329,6 +1356,34 @@ ipcMain.handle("agent:runAction", async (_event, payload) => {
     },
     async () => {
       const result = await runNamedAction(safeName, safeVars);
+      return {
+        snapshot: getStateSnapshot(),
+        logs: result?.logs ?? []
+      };
+    }
+  );
+});
+
+ipcMain.handle("agent:runE2EFromProfile", async (_event, payload) => {
+  const { baseUrl, token, importacionId, periodoTarget } = payload;
+  const currentAction = getCurrentAction(state.plan, state.planIndex) || {};
+  const trimmedPeriodo = periodoTarget ? String(periodoTarget).trim() : "";
+  const actionPeriodo =
+    currentAction.periodoTarget || currentAction.periodo_target || currentAction.periodo || "";
+  const resolvedPeriodo = trimmedPeriodo || actionPeriodo || "2025";
+  const safeVars = resolvedPeriodo ? { periodoTarget: resolvedPeriodo } : {};
+
+  return runStep(
+    {
+      baseUrl,
+      token,
+      importacionId,
+      step: "e2e_from_profile_assisted",
+      message: `E2E desde perfil ejecutado (${resolvedPeriodo})`,
+      eventExtra: { periodoTarget: resolvedPeriodo }
+    },
+    async () => {
+      const result = await runNamedAction("e2e_from_profile_assisted", safeVars);
       return {
         snapshot: getStateSnapshot(),
         logs: result?.logs ?? []

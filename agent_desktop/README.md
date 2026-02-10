@@ -84,6 +84,14 @@ E2E 1 acción (proveedor + claveAcceso + categoria):
 7. `applyPrepare` (verificar selección sin guardar)
 8. `applyConfirm` (confirmación humana)
 
+E2E desde perfil (UI):
+1. openBrowser → login → loadPlan
+2. Navegar a `https://srienlinea.sri.gob.ec/sri-en-linea/contribuyente/perfil`
+3. En "Ejecucion": seleccionar `Run e2e_from_profile_assisted`
+4. Definir `Periodo target` (si el plan no trae `periodoTarget`, usar 2025)
+5. `Ejecutar` y verificar navegación hasta `facturas-electronicas.jsf?emisor=...`
+6. Confirmar `applyPrepare` → `applyConfirm` (asistido)
+
 ## Tests
 
 Run: `npm test`
@@ -92,3 +100,4 @@ Self-check (proveedor_open_by_ruc): `npm run selfcheck:proveedor-open-by-ruc`
 Self-check (invoice_open_by_clave): `npm run selfcheck:invoice-open-by-clave`
 Self-check (apply categoria): `npm run selfcheck:apply-categoria`
 Self-check (e2e single action): `npm run selfcheck:e2e-single-action`
+Self-check (e2e from profile): `npm run selfcheck:e2e-from-profile`
