@@ -237,10 +237,17 @@
         "anyText": ["Facturas electrónicas"]
       },
       {
-        "type": "clickAny",
-        "selectors": [
-          "css=table a[href*='facturas-electronicas.jsf'][href*='emisor={{ruc}}']",
-          "css=table a:has-text('{{ruc}}')"
+        "type": "clickTableCellLink",
+        "table": "css=table#anchoDoc",
+        "cellIndex": 1,
+        "cellText": "{{ruc}}",
+        "match": "exact",
+        "targetSelectors": [
+          "css=a[href]",
+          "css=a[onclick]",
+          "css=button[onclick]",
+          "css=a",
+          "css=button"
         ]
       },
       {
