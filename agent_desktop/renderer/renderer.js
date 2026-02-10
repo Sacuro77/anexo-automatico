@@ -19,6 +19,10 @@ const planFactura = document.getElementById("planFactura");
 const planCategoria = document.getElementById("planCategoria");
 const planConfianza = document.getElementById("planConfianza");
 
+const runMode = document.getElementById("runMode");
+const periodoTargetInput = document.getElementById("periodoTarget");
+const btnRunPlan = document.getElementById("btnRunPlan");
+
 const lastEvent = document.getElementById("lastEvent");
 const lastError = document.getElementById("lastError");
 const btnCopyError = document.getElementById("btnCopyError");
@@ -265,6 +269,31 @@ function requirePlanLoaded() {
   }
 }
 
+function resolvePeriodoTarget() {
+  const item = planState.currentItem || {};
+  const fromAction =
+    item.periodoTarget || item.periodo_target || item.periodo || "";
+  if (fromAction) {
+    return String(fromAction).trim();
+  }
+  const fromInput = periodoTargetInput ? periodoTargetInput.value.trim() : "";
+  if (fromInput) {
+    return fromInput;
+  }
+  return "2025";
+}
+
+function syncRunModeUi() {
+  if (!runMode || !periodoTargetInput) {
+    return;
+  }
+  const isE2E = runMode.value === "e2e_from_profile";
+  periodoTargetInput.disabled = !isE2E;
+  if (isE2E && !periodoTargetInput.value.trim()) {
+    periodoTargetInput.value = "2025";
+  }
+}
+
 function requestRucModal(message) {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
@@ -361,6 +390,32 @@ async function handleProviderOpen() {
   appendLog(`Proveedor abierto por RUC: ${ruc}`, data.result);
   updateStatus(data.result && data.result.snapshot ? data.result.snapshot : data.result);
   updateLastEvent(data.eventPayload, data.event);
+}
+
+async function handleRunPlanAction() {
+  const { baseUrl, token, importacionId } = getInputs();
+  requireBaseInputs({ baseUrl, token, importacionId });
+  requirePlanLoaded();
+
+  const mode = runMode ? runMode.value : "current";
+  if (mode === "e2e_from_profile") {
+    const periodoTarget = resolvePeriodoTarget();
+    appendLog(
+      `Ejecutando e2e_from_profile_assisted (periodoTarget=${periodoTarget})...`
+    );
+    const data = await window.agentApi.runE2EFromProfile(
+      baseUrl,
+      token,
+      importacionId,
+      periodoTarget
+    );
+    appendLog("E2E ejecutado", data.result);
+    updateStatus(data.result && data.result.snapshot ? data.result.snapshot : data.result);
+    updateLastEvent(data.eventPayload, data.event);
+    return;
+  }
+
+  await handleProviderOpen();
 }
 
 async function handleInvoiceOpen() {
@@ -468,6 +523,7 @@ bindButton("btnEventOk", handleEventOk);
 bindButton("btnProviderOpen", handleProviderOpen);
 bindButton("btnInvoiceOpen", handleInvoiceOpen);
 bindButton("btnApplyCategory", handleApplyPrepare);
+bindButton("btnRunPlan", handleRunPlanAction);
 
 btnConfirmApply.addEventListener("click", async () => {
   try {
@@ -492,3 +548,8 @@ btnCopyError.addEventListener("click", async () => {
     appendLog("No se pudo copiar", error.message || String(error));
   }
 });
+
+if (runMode) {
+  runMode.addEventListener("change", syncRunModeUi);
+}
+syncRunModeUi();

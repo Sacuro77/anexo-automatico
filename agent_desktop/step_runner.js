@@ -25,6 +25,8 @@ function getCurrentAction(plan, index) {
 function buildActionContext(action = {}, extras = {}) {
   const categoriaObjetivo =
     action.categoria_objetivo || action.categoria_nombre || action.categoria_id || "";
+  const periodoTarget =
+    action.periodoTarget || action.periodo_target || action.periodo || "";
   return {
     proveedor_id: action.proveedor_id || "",
     proveedor_ruc: action.proveedor_ruc || "",
@@ -33,6 +35,7 @@ function buildActionContext(action = {}, extras = {}) {
     categoria_id: action.categoria_id || "",
     categoria_nombre: action.categoria_nombre || "",
     categoria_objetivo: categoriaObjetivo,
+    periodoTarget,
     confianza: action.confianza || "",
     ...extras
   };

@@ -69,10 +69,8 @@
             "table": "css=table#anexos\\:lista-anexos",
             "rowText": "{{periodoTarget}}",
             "actionSelectors": [
-              "css=a:has-text('Editar anexo')",
-              "css=a:has-text('Editar')",
-              "css=button:has-text('Editar anexo')",
-              "css=button:has-text('Editar')"
+              "css=td:nth-child(4) a.titulado[href*='editar-anexo.jsf']",
+              "css=a.titulado[href*='editar-anexo.jsf']"
             ]
           }
         ],
@@ -116,10 +114,8 @@
             "table": "css=table#anexos\\:lista-anexos",
             "rowText": "{{periodoTarget}}",
             "actionSelectors": [
-              "css=a:has-text('Editar anexo')",
-              "css=a:has-text('Editar')",
-              "css=button:has-text('Editar anexo')",
-              "css=button:has-text('Editar')"
+              "css=td:nth-child(4) a.titulado[href*='editar-anexo.jsf']",
+              "css=a.titulado[href*='editar-anexo.jsf']"
             ]
           }
         ]
@@ -348,6 +344,64 @@
       { "type": "click", "selector": "REEMPLAZAR_SELECTOR_ABRIR_FACTURA" }
     ]
   },
+  "e2e_from_profile_assisted": {
+    "steps": [
+      {
+        "type": "assertOnPage",
+        "urlPattern": "contribuyente\/perfil"
+      },
+      {
+        "type": "runAction",
+        "actionName": "provider_open"
+      },
+      {
+        "type": "assertOnPage",
+        "urlPattern": "anexo-gastos-personales\/anexos\\.jsf|\/anexos\\.jsf",
+        "anyText": ["Anexos"]
+      },
+      {
+        "type": "runAction",
+        "actionName": "anexo_period_ensure",
+        "vars": { "periodoTarget": "{{periodoTarget}}" }
+      },
+      {
+        "type": "assertOnPage",
+        "urlPattern": "editar-anexo\\.jsf",
+        "anyText": ["Anexo"]
+      },
+      {
+        "type": "runAction",
+        "actionName": "anexo_open_facturas_electronicas"
+      },
+      {
+        "type": "assertOnPage",
+        "urlPattern": "facturas-electronicas-agrupadas\\.jsf",
+        "anyText": ["Facturas electrónicas"]
+      },
+      {
+        "type": "runAction",
+        "actionName": "proveedor_open_by_ruc",
+        "vars": { "ruc": "{{proveedor_ruc}}" }
+      },
+      {
+        "type": "assertOnPage",
+        "urlPattern": "facturas-electronicas\\.jsf\\?emisor=",
+        "anyText": ["Facturas electrónicas"]
+      },
+      {
+        "type": "runAction",
+        "actionName": "invoice_open_by_clave",
+        "vars": { "claveAcceso": "{{clave_acceso}}" }
+      },
+      {
+        "type": "assertOnPage",
+        "urlPattern": "facturas-electronicas\\.jsf\\?.*(clave|claveAcceso)="
+      },
+      { "type": "applyPrepare" },
+      { "type": "applyConfirm" }
+    ]
+  },
+
   "apply": {
     "steps_before_confirm": [
       {
