@@ -41,33 +41,42 @@ function buildActionContext(action = {}, extras = {}) {
   };
 }
 
-function interpolateTemplate(value, context) {
+function interpolateTemplate(value, context, options = {}) {
   if (typeof value !== "string") {
     return value;
   }
+  const onMissingVar = options && typeof options.onMissingVar === "function"
+    ? options.onMissingVar
+    : null;
   return value.replace(/{{\s*([\w.-]+)\s*}}/g, (_match, key) => {
     if (!context || typeof context !== "object") {
+      if (onMissingVar) {
+        onMissingVar(key, value);
+      }
       return "";
     }
     const resolved = context[key];
     if (resolved === undefined || resolved === null) {
+      if (onMissingVar) {
+        onMissingVar(key, value);
+      }
       return "";
     }
     return String(resolved);
   });
 }
 
-function interpolateDeep(value, context) {
+function interpolateDeep(value, context, options = {}) {
   if (typeof value === "string") {
-    return interpolateTemplate(value, context);
+    return interpolateTemplate(value, context, options);
   }
   if (Array.isArray(value)) {
-    return value.map((entry) => interpolateDeep(entry, context));
+    return value.map((entry) => interpolateDeep(entry, context, options));
   }
   if (value && typeof value === "object") {
     const next = {};
     for (const [key, entry] of Object.entries(value)) {
-      next[key] = interpolateDeep(entry, context);
+      next[key] = interpolateDeep(entry, context, options);
     }
     return next;
   }

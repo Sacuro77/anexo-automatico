@@ -468,7 +468,11 @@ async function runStepSequence(steps, context, options = {}) {
 
   for (let index = 0; index < steps.length; index += 1) {
     const rawStep = steps[index];
-    const step = interpolateDeep(rawStep, context);
+    const step = interpolateDeep(rawStep, context, {
+      onMissingVar: (key, template) => {
+        console.warn(`[interpolate] warn: missing var ${key} in "${clipLog(template, 160)}"`);
+      }
+    });
     if (!step || typeof step !== "object") {
       throw new Error(`Step invalido en indice ${index}.`);
     }
@@ -656,7 +660,9 @@ async function runStepSequence(steps, context, options = {}) {
         if (!actionName) {
           throw new Error("runAction requires actionName.");
         }
-        const vars = step.vars && typeof step.vars === "object" ? step.vars : {};
+        const stepVars = step.vars && typeof step.vars === "object" ? step.vars : {};
+        const inheritedVars = context && typeof context === "object" ? context : {};
+        const vars = { ...inheritedVars, ...stepVars };
         console.log(
           `[runAction] action=${actionName} vars=${JSON.stringify(vars)} url(before)=${page.url()}`
         );
@@ -703,10 +709,27 @@ async function runStepSequence(steps, context, options = {}) {
         break;
       case "waitForURL":
         if (step.url) {
-          await page.waitForURL(step.url, { timeout });
+          if (page.url() === String(step.url)) {
+            console.log(`[step_runner] waitForURL immediate match url=${page.url()}`);
+            break;
+          }
+          await page.waitForURL(step.url, { timeout, waitUntil: "domcontentloaded" });
         } else if (step.pattern) {
-          const regex = new RegExp(step.pattern);
-          await page.waitForURL(regex, { timeout });
+          let regex = null;
+          try {
+            regex = new RegExp(step.pattern);
+          } catch (error) {
+            throw new Error(`step.waitForURL pattern invalido: ${step.pattern}`);
+          }
+          const currentUrl = page.url();
+          if (regex.test(currentUrl)) {
+            console.log(`[step_runner] waitForURL immediate match pattern=/${step.pattern}/ url=${currentUrl}`);
+            break;
+          }
+          await page.waitForURL((url) => {
+            regex.lastIndex = 0;
+            return regex.test(url.toString());
+          }, { timeout, waitUntil: "domcontentloaded" });
         } else {
           throw new Error("step.waitForURL requiere url o pattern.");
         }

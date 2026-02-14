@@ -3,6 +3,7 @@ const {
   buildActionContext,
   getActionsFromPlan,
   getCurrentAction,
+  interpolateDeep,
   interpolateTemplate,
   resolveCategoryOption,
   validateConfigForAction,
@@ -27,6 +28,18 @@ assert.strictEqual(context.categoria_objetivo, "Servicios");
 assert.strictEqual(
   interpolateTemplate("{{factura_id}}-{{categoria_objetivo}}", context),
   "10-Servicios"
+);
+
+const renderedStep = interpolateDeep(
+  {
+    selector:
+      "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):has-text('{{periodoTarget}}')) a.titulado[href*='editar-anexo.jsf'][href*='anexo=']",
+  },
+  { periodoTarget: "2025" }
+);
+assert.strictEqual(
+  renderedStep.selector,
+  "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):has-text('2025')) a.titulado[href*='editar-anexo.jsf'][href*='anexo=']"
 );
 
 const categoryMap = {
