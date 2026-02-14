@@ -37,18 +37,74 @@
 
     {
       "type": "clickAny",
-      "logUrlAfter": true,
       "selectors": [
         "css=#mySidebar a.ui-menuitem-link:has-text('Generación anexo')",
         "css=#mySidebar a.ui-menuitem-link[href*='tportal-internet/accederAplicacion.jspa?redireccion=101&idGrupo=98']",
         "css=#mySidebar a.ui-menuitem-link[href*='tportal-internet/accederAplicacion.jspa?redireccion=101']"
       ]
     },
-
     {
       "type": "waitForURL",
       "timeout": 60000,
       "pattern": "tportal-internet|accederAplicacion\\.jspa|sriservicios\\.sri\\.gob\\.ec/anexo-gastos-personales|anexo-gastos-personales|anexos\\.jsf"
+    },
+    {
+      "type": "assertOnPage",
+      "urlPattern": "anexos\\.jsf",
+      "anyText": ["Anexos de Gastos Personales", "Anexos"]
+    },
+    {
+      "type": "waitForSelector",
+      "timeout": 60000,
+      "selector": "css=table#anexos\\:lista-anexos"
+    },
+    {
+      "type": "clickAny",
+      "logUrl": true,
+      "selectors": [
+        "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):has-text('{{periodoTarget}}')) a.titulado[href*='editar-anexo.jsf'][href*='anexo=']",
+        "css=table#anexos\\:lista-anexos tr:has(td:has-text('{{periodoTarget}}')) a:has(i.fa-edit)",
+        "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):text-is('{{periodoTarget}}')) a.titulado[href*='editar-anexo.jsf']",
+        "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):has-text('{{periodoTarget}}')) a.titulado[data-original-title*='Editar'][href*='editar-anexo.jsf']"
+      ]
+    },
+    {
+      "type": "waitForURL",
+      "timeout": 60000,
+      "pattern": "editar-anexo\\.jsf\\?anexo="
+    },
+    {
+      "type": "assertOnPage",
+      "urlPattern": "editar-anexo\\.jsf\\?anexo=",
+      "anyText": ["Anexo"]
+    },
+    {
+      "type": "trySteps",
+      "log": "wait link Mis facturas electrónicas",
+      "steps": [
+        { "type": "waitForSelector", "timeout": 60000, "selector": "css=a[href*='facturas-electronicas-agrupadas.jsf']" }
+      ],
+      "fallbackSteps": [
+        { "type": "waitForSelector", "timeout": 60000, "selector": "css=a:has-text('Mis facturas electrónicas')" }
+      ]
+    },
+    {
+      "type": "clickAny",
+      "logUrl": true,
+      "selectors": [
+        "css=a[href*='facturas-electronicas-agrupadas.jsf']",
+        "css=a:has-text('Mis facturas electrónicas')"
+      ]
+    },
+    {
+      "type": "waitForURL",
+      "timeout": 60000,
+      "pattern": "facturas-electronicas-agrupadas\\.jsf|facturas-electronicas\\.jsf"
+    },
+    {
+      "type": "assertOnPage",
+      "urlPattern": "facturas-electronicas",
+      "anyText": ["Facturas", "electrónicas", "Mis facturas"]
     }
   ]
 },
@@ -233,15 +289,13 @@
         "anyText": ["Facturas electrónicas"]
       },
       {
-        "type": "clickTableCellLink",
+        "type": "clickRowAction",
         "table": "css=table#anchoDoc",
-        "cellIndex": 0,
-        "cellText": "{{ruc}}",
-        "match": "exact",
-        "targetSelectors": [
+        "rowText": "{{ruc}}",
+        "actionSelectors": [
+          "css=a[href*='facturas-electronicas.jsf'][href*='emisor={{ruc}}']",
           "css=a[href*='facturas-electronicas.jsf'][href*='emisor=']",
           "css=a[onclick]",
-          "css=button[onclick]",
           "css=a",
           "css=button"
         ]
@@ -267,73 +321,40 @@
       },
       {
         "type": "trySteps",
-        "log": "invoice_open_by_clave: intentar filtro por clave",
+        "log": "invoice_open_by_clave: expandir todas las facturas",
         "steps": [
-          {
-            "type": "waitForSelector",
-            "timeout": 4000,
-            "selector": "css=input#filtro, css=input#filter, css=input[id*='filtro'], css=input[id*='filter'], css=input[placeholder*='Clave']"
-          },
-          {
-            "type": "fill",
-            "selector": "css=input#filtro, css=input#filter, css=input[id*='filtro'], css=input[id*='filter'], css=input[placeholder*='Clave']",
-            "text": "{{claveAcceso}}"
-          },
-          {
-            "type": "press",
-            "selector": "css=input#filtro, css=input#filter, css=input[id*='filtro'], css=input[id*='filter'], css=input[placeholder*='Clave']",
-            "key": "Enter"
-          },
           {
             "type": "clickAny",
             "selectors": [
-              "css=button:has-text('Buscar')",
-              "css=input[type='submit'][value*='Buscar']",
-              "css=a:has-text('Buscar')"
+              "css=a:has-text('Expandir todo')",
+              "css=button:has-text('Expandir todo')",
+              "css=[role='button']:has-text('Expandir todo')",
+              "css=a[title*='Expandir']",
+              "css=button[title*='Expandir']"
             ]
           }
         ],
         "fallbackSteps": [
           {
             "type": "assertOnPage",
-            "urlPattern": "facturas-electronicas\\.jsf"
+            "urlPattern": "facturas-electronicas\\.jsf",
+            "anyText": ["Facturas electrónicas"]
           }
         ]
       },
       {
-        "type": "trySteps",
-        "log": "invoice_open_by_clave: buscar por celda (match exact) y fallback por fila",
-        "steps": [
-          {
-            "type": "clickTableCellLink",
-            "table": "css=table#anchoDoc",
-            "cellIndex": 1,
-            "cellText": "{{claveAcceso}}",
-            "match": "includes",
-            "logUrl": true,
-            "targetSelectors": [
-              "css=a[href]",
-              "css=a[onclick]",
-              "css=button[onclick]",
-              "css=a",
-              "css=button"
-            ]
-          }
-        ],
-        "fallbackSteps": [
-          {
-            "type": "clickTableCellLink",
-            "table": "css=table#anchoDoc",
-            "rowText": "{{claveAcceso}}",
-            "logUrl": true,
-            "targetSelectors": [
-              "css=a[href]",
-              "css=a[onclick]",
-              "css=button[onclick]",
-              "css=a",
-              "css=button"
-            ]
-          }
+        "type": "waitForSelector",
+        "timeout": 10000,
+        "selector": "css=a:has-text('FACTURA '), a:has-text('Factura '), button:has-text('FACTURA '), button:has-text('Factura ')"
+      },
+      {
+        "type": "clickAny",
+        "logUrl": true,
+        "selectors": [
+          "css=a:has-text('FACTURA ')",
+          "css=a:has-text('Factura ')",
+          "css=button:has-text('FACTURA ')",
+          "css=button:has-text('Factura ')"
         ]
       },
       {
@@ -357,7 +378,8 @@
       },
       {
         "type": "runAction",
-        "actionName": "provider_open"
+        "actionName": "provider_open",
+        "vars": { "periodoTarget": "{{periodoTarget}}" }
       },
       {
         "type": "assertOnPage",
@@ -445,3 +467,4 @@
     "confirm_success_timeout": 15000
   }
 }
+
