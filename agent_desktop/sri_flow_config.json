@@ -18,88 +18,40 @@
       "sidebar1": "#mySidebar",
       "sidebar2": "#mySidebar2"
     },
-
-    {
-      "type": "clickAny",
-      "selectors": [
-        "css=#mySidebar a.ui-panelmenu-header-link:has-text('ANEXOS')",
-        "css=#mySidebar span.ui-menuitem-text:has-text('ANEXOS')"
-      ]
-    },
-
-    {
-      "type": "clickAny",
-      "selectors": [
-        "css=#mySidebar a.ui-menuitem-link:has-text('Anexo de gastos personales en línea')",
-        "css=#mySidebar span.ui-menuitem-text:has-text('Anexo de gastos personales en línea')"
-      ]
-    },
-
-    {
-      "type": "clickAny",
-      "selectors": [
-        "css=#mySidebar a.ui-menuitem-link:has-text('Generación anexo')",
-        "css=#mySidebar a.ui-menuitem-link[href*='tportal-internet/accederAplicacion.jspa?redireccion=101&idGrupo=98']",
-        "css=#mySidebar a.ui-menuitem-link[href*='tportal-internet/accederAplicacion.jspa?redireccion=101']"
-      ]
-    },
-    {
-      "type": "waitForURL",
-      "timeout": 60000,
-      "pattern": "tportal-internet|accederAplicacion\\.jspa|sriservicios\\.sri\\.gob\\.ec/anexo-gastos-personales|anexo-gastos-personales|anexos\\.jsf"
-    },
-    {
-      "type": "assertOnPage",
-      "urlPattern": "anexos\\.jsf",
-      "anyText": ["Anexos de Gastos Personales", "Anexos"]
-    },
-    {
-      "type": "waitForSelector",
-      "timeout": 60000,
-      "selector": "css=table#anexos\\:lista-anexos"
-    },
-    {
-      "type": "clickAny",
-      "logUrl": true,
-      "selectors": [
-        "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):has-text('{{periodoTarget}}')) a.titulado[href*='editar-anexo.jsf'][href*='anexo=']",
-        "css=table#anexos\\:lista-anexos tr:has(td:has-text('{{periodoTarget}}')) a:has(i.fa-edit)",
-        "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):text-is('{{periodoTarget}}')) a.titulado[href*='editar-anexo.jsf']",
-        "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):has-text('{{periodoTarget}}')) a.titulado[data-original-title*='Editar'][href*='editar-anexo.jsf']"
-      ]
-    },
-    {
-      "type": "waitForURL",
-      "timeout": 60000,
-      "pattern": "editar-anexo\\.jsf\\?anexo="
-    },
-    {
-      "type": "assertOnPage",
-      "urlPattern": "editar-anexo\\.jsf\\?anexo=",
-      "anyText": ["Anexo"]
-    },
     {
       "type": "trySteps",
-      "log": "wait link Mis facturas electrónicas",
+      "log": "provider_open: si ya estamos en facturas, no navegar; caso contrario ir a anexos",
       "steps": [
-        { "type": "waitForSelector", "timeout": 60000, "selector": "css=a[href*='facturas-electronicas-agrupadas.jsf']" }
+        {
+          "type": "assertOnPage",
+          "urlPattern": "anexo-gastos-personales/facturas-electronicas-agrupadas\\.jsf|facturas-electronicas-agrupadas\\.jsf|facturas-electronicas\\.jsf\\?emisor=",
+          "anyText": ["Facturas electrónicas por proveedor","Facturas electrónicas"]
+        },
+        { "type": "sleep", "ms": 1 }
       ],
       "fallbackSteps": [
-        { "type": "waitForSelector", "timeout": 60000, "selector": "css=a:has-text('Mis facturas electrónicas')" }
+        { "type": "clickAny", "selectors": ["css=#mySidebar a.ui-panelmenu-header-link:has-text('ANEXOS')","css=#mySidebar span.ui-menuitem-text:has-text('ANEXOS')"] },
+        { "type": "clickAny", "selectors": ["css=#mySidebar a.ui-menuitem-link:has-text('Anexo de gastos personales en línea')","css=#mySidebar span.ui-menuitem-text:has-text('Anexo de gastos personales en línea')"] },
+        { "type": "clickAny", "selectors": ["css=#mySidebar a.ui-menuitem-link:has-text('Generación anexo')","css=#mySidebar a.ui-menuitem-link[href*='tportal-internet/accederAplicacion.jspa?redireccion=101&idGrupo=98']","css=#mySidebar a.ui-menuitem-link[href*='tportal-internet/accederAplicacion.jspa?redireccion=101']"] },
+        { "type": "waitForURL", "timeout": 60000, "pattern": "accederAplicacion\\.jspa|/anexo-gastos-personales/anexos\\.jsf" },
+        { "type": "assertOnPage", "urlPattern": "anexos\\.jsf", "anyText": ["Anexos de Gastos Personales", "Anexos"] },
+        { "type": "waitForSelector", "timeout": 60000, "selector": "css=table#anexos\\:lista-anexos" },
+        { "type": "clickAny", "logUrl": true, "selectors": [
+          "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):has-text('{{periodoTarget}}')) a.titulado[href*='editar-anexo.jsf'][href*='anexo=']",
+          "css=table#anexos\\:lista-anexos tr:has(td:has-text('{{periodoTarget}}')) a:has(i.fa-edit)",
+          "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):text-is('{{periodoTarget}}')) a.titulado[href*='editar-anexo.jsf']",
+          "css=table#anexos\\:lista-anexos tr:has(td:nth-child(1):has-text('{{periodoTarget}}')) a.titulado[data-original-title*='Editar'][href*='editar-anexo.jsf']"
+        ] },
+        { "type": "waitForURL", "timeout": 60000, "pattern": "editar-anexo\\.jsf\\?anexo=" },
+        { "type": "assertOnPage", "urlPattern": "editar-anexo\\.jsf\\?anexo=", "anyText": ["Anexo"] },
+        { "type": "trySteps", "log": "wait link Mis facturas electrónicas", "steps": [
+          { "type": "waitForSelector", "timeout": 60000, "selector": "css=a[href*='facturas-electronicas-agrupadas.jsf']" }
+        ], "fallbackSteps": [
+          { "type": "waitForSelector", "timeout": 60000, "selector": "css=a:has-text('Mis facturas electrónicas')" }
+        ] },
+        { "type": "clickAny", "logUrl": true, "selectors": ["css=a[href*='facturas-electronicas-agrupadas.jsf']","css=a:has-text('Mis facturas electrónicas')"] },
+        { "type": "waitForURL", "timeout": 60000, "pattern": "facturas-electronicas-agrupadas\\.jsf|facturas-electronicas\\.jsf" }
       ]
-    },
-    {
-      "type": "clickAny",
-      "logUrl": true,
-      "selectors": [
-        "css=a[href*='facturas-electronicas-agrupadas.jsf']",
-        "css=a:has-text('Mis facturas electrónicas')"
-      ]
-    },
-    {
-      "type": "waitForURL",
-      "timeout": 60000,
-      "pattern": "facturas-electronicas-agrupadas\\.jsf|facturas-electronicas\\.jsf"
     },
     {
       "type": "assertOnPage",
@@ -285,23 +237,37 @@
     "steps": [
       {
         "type": "assertOnPage",
-        "urlPattern": "facturas-electronicas-agrupadas\\.jsf",
+        "urlPattern": "facturas-electronicas-agrupadas\\.jsf|facturas-electronicas\\.jsf\\?emisor=",
         "anyText": ["Facturas electrónicas"]
       },
       {
-        "type": "clickRowAction",
-        "table": "css=table#anchoDoc",
-        "rowText": "{{ruc}}",
-        "actionSelectors": [
-          "css=a[href*='facturas-electronicas.jsf'][href*='emisor={{ruc}}']",
-          "css=a[href*='facturas-electronicas.jsf'][href*='emisor=']",
-          "css=a[onclick]",
-          "css=a",
-          "css=button"
+        "type": "trySteps",
+        "log": "proveedor_open_by_ruc: abrir detalle por RUC {{ruc}}",
+        "steps": [
+          {
+            "type": "clickRowAction",
+            "table": "css=table#anchoDoc",
+            "rowText": "{{ruc}}",
+            "actionSelectors": [
+              "css=a[href*='facturas-electronicas.jsf'][href*='emisor={{ruc}}']",
+              "css=a[href*='facturas-electronicas.jsf'][href*='emisor=']",
+              "css=a[onclick]",
+              "css=a",
+              "css=button"
+            ]
+          }
+        ],
+        "fallbackSteps": [
+          {
+            "type": "assertOnPage",
+            "urlPattern": "facturas-electronicas\\.jsf\\?emisor=",
+            "anyText": ["Facturas electrónicas"]
+          }
         ]
       },
       {
         "type": "waitForURL",
+        "timeout": 60000,
         "pattern": "facturas-electronicas\\.jsf\\?emisor="
       },
       {
@@ -343,23 +309,91 @@
         ]
       },
       {
-        "type": "waitForSelector",
-        "timeout": 10000,
-        "selector": "css=a:has-text('FACTURA '), a:has-text('Factura '), button:has-text('FACTURA '), button:has-text('Factura ')"
-      },
-      {
-        "type": "clickAny",
-        "logUrl": true,
-        "selectors": [
-          "css=a:has-text('FACTURA ')",
-          "css=a:has-text('Factura ')",
-          "css=button:has-text('FACTURA ')",
-          "css=button:has-text('Factura ')"
+        "type": "trySteps",
+        "log": "invoice_open_by_clave: click categoria {{categoria_objetivo}} en bloque de factura por claveAcceso",
+        "steps": [
+          {
+            "type": "waitForSelector",
+            "timeout": 12000,
+            "selector": "css=div:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']), li:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']), tr:has(a[href*='{{claveAcceso}}'])"
+          },
+          {
+            "type": "clickAny",
+            "logUrl": true,
+            "selectors": [
+              "css=div:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']) button:has-text('{{categoria_objetivo}}')",
+              "css=li:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']) button:has-text('{{categoria_objetivo}}')",
+              "css=tr:has(a[href*='{{claveAcceso}}']) button:has-text('{{categoria_objetivo}}')",
+              "css=div:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']) [title*='{{categoria_objetivo}}']",
+              "css=div:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']) [aria-label*='{{categoria_objetivo}}']"
+            ]
+          }
+        ],
+        "fallbackSteps": [
+          {
+            "type": "waitForSelector",
+            "timeout": 12000,
+            "selector": "css=div:has-text('FACTURA'), li:has-text('FACTURA'), tr:has-text('FACTURA')"
+          },
+          {
+            "type": "clickAny",
+            "logUrl": true,
+            "selectors": [
+              "css=div:has-text('FACTURA') button:has-text('{{categoria_objetivo}}')",
+              "css=li:has-text('FACTURA') button:has-text('{{categoria_objetivo}}')",
+              "css=tr:has-text('FACTURA') button:has-text('{{categoria_objetivo}}')",
+              "css=div:has-text('FACTURA') [title*='{{categoria_objetivo}}']",
+              "css=div:has-text('FACTURA') [aria-label*='{{categoria_objetivo}}']"
+            ]
+          }
         ]
       },
       {
-        "type": "waitForURL",
-        "pattern": "facturas-electronicas\\.jsf\\?.*(clave|claveAcceso)="
+        "type": "trySteps",
+        "log": "invoice_open_by_clave: abrir factura objetivo por claveAcceso",
+        "steps": [
+          {
+            "type": "waitForSelector",
+            "timeout": 12000,
+            "selector": "css=a[href*='{{claveAcceso}}'], button[onclick*='{{claveAcceso}}'], [onclick*='{{claveAcceso}}']"
+          },
+          {
+            "type": "clickAny",
+            "logUrl": true,
+            "selectors": [
+              "css=a[href*='{{claveAcceso}}']",
+              "css=button[onclick*='{{claveAcceso}}']",
+              "css=[onclick*='{{claveAcceso}}']"
+            ]
+          },
+          {
+            "type": "waitForURL",
+            "timeout": 60000,
+            "pattern": "facturas-electronicas\\.jsf\\?.*(clave|claveAcceso)="
+          }
+        ],
+        "fallbackSteps": [
+          {
+            "type": "waitForSelector",
+            "timeout": 10000,
+            "selector": "css=a:has-text('FACTURA '), a:has-text('Factura '), button:has-text('FACTURA '), button:has-text('Factura ')"
+          },
+          {
+            "type": "clickAny",
+            "logUrl": true,
+            "selectors": [
+              "css=a:has-text('FACTURA ')",
+              "css=a:has-text('Factura ')",
+              "css=button:has-text('FACTURA ')",
+              "css=button:has-text('Factura ')"
+            ]
+          },
+          {
+            "type": "waitForURL",
+            "timeout": 60000,
+            "pattern": "facturas-electronicas\\.jsf\\?.*(clave|claveAcceso)="
+          }
+        ]
       }
     ]
   },
@@ -382,28 +416,41 @@
         "vars": { "periodoTarget": "{{periodoTarget}}" }
       },
       {
-        "type": "assertOnPage",
-        "urlPattern": "anexo-gastos-personales\/anexos\\.jsf|\/anexos\\.jsf",
-        "anyText": ["Anexos"]
-      },
-      {
-        "type": "runAction",
-        "actionName": "anexo_period_ensure",
-        "vars": { "periodoTarget": "{{periodoTarget}}" }
-      },
-      {
-        "type": "assertOnPage",
-        "urlPattern": "editar-anexo\\.jsf",
-        "anyText": ["Anexo"]
-      },
-      {
-        "type": "runAction",
-        "actionName": "anexo_open_facturas_electronicas"
-      },
-      {
-        "type": "assertOnPage",
-        "urlPattern": "facturas-electronicas-agrupadas\\.jsf",
-        "anyText": ["Facturas electrónicas"]
+        "type": "trySteps",
+        "log": "e2e: continuar si ya estamos en facturas agrupadas; fallback por flujo de anexos",
+        "steps": [
+          {
+            "type": "assertOnPage",
+            "urlPattern": "facturas-electronicas-agrupadas\\.jsf",
+            "anyText": ["Facturas electrónicas por proveedor","Facturas electrónicas"]
+          }
+        ],
+        "fallbackSteps": [
+          {
+            "type": "assertOnPage",
+            "urlPattern": "anexo-gastos-personales\/anexos\\.jsf|\/anexos\\.jsf",
+            "anyText": ["Anexos"]
+          },
+          {
+            "type": "runAction",
+            "actionName": "anexo_period_ensure",
+            "vars": { "periodoTarget": "{{periodoTarget}}" }
+          },
+          {
+            "type": "assertOnPage",
+            "urlPattern": "editar-anexo\\.jsf",
+            "anyText": ["Anexo"]
+          },
+          {
+            "type": "runAction",
+            "actionName": "anexo_open_facturas_electronicas"
+          },
+          {
+            "type": "assertOnPage",
+            "urlPattern": "facturas-electronicas-agrupadas\\.jsf",
+            "anyText": ["Facturas electrónicas por proveedor","Facturas electrónicas"]
+          }
+        ]
       },
       {
         "type": "runAction",
@@ -418,7 +465,7 @@
       {
         "type": "runAction",
         "actionName": "invoice_open_by_clave",
-        "vars": { "claveAcceso": "{{clave_acceso}}" }
+        "vars": { "claveAcceso": "{{clave_acceso}}", "categoria_objetivo": "{{categoria_objetivo}}" }
       },
       {
         "type": "assertOnPage",
@@ -467,4 +514,3 @@
     "confirm_success_timeout": 15000
   }
 }
-
