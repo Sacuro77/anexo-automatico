@@ -278,7 +278,7 @@
     ]
   },
 
-  "invoice_open_by_clave": {
+  "invoice_mark_category_by_numero": {
     "steps": [
       {
         "type": "assertOnPage",
@@ -287,7 +287,7 @@
       },
       {
         "type": "trySteps",
-        "log": "invoice_open_by_clave: expandir todas las facturas",
+        "log": "invoice_mark_category_by_numero: expandir todas las facturas",
         "steps": [
           {
             "type": "clickAny",
@@ -309,90 +309,40 @@
         ]
       },
       {
+        "type": "waitForSelector",
+        "timeout": 20000,
+        "selector": "css=table#anchoDoc tr:has-text('FACTURA {{numero_factura}}'), table#anchoDoc tr:has-text('FACTURA {{numero_factura_compacto}}'), table#anchoDoc tr:has-text('{{numero_factura}}'), table#anchoDoc tr:has-text('{{numero_factura_compacto}}')"
+      },
+      {
         "type": "trySteps",
-        "log": "invoice_open_by_clave: click categoria {{categoria_objetivo}} en bloque de factura por claveAcceso",
+        "log": "invoice_mark_category_by_numero: esperar boton copiar categoria panel {{categoria_panel}} en factura {{numero_factura}}",
         "steps": [
           {
             "type": "waitForSelector",
-            "timeout": 12000,
-            "selector": "css=div:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']), li:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']), tr:has(a[href*='{{claveAcceso}}'])"
-          },
-          {
-            "type": "clickAny",
-            "logUrl": true,
-            "selectors": [
-              "css=div:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']) button:has-text('{{categoria_objetivo}}')",
-              "css=li:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']) button:has-text('{{categoria_objetivo}}')",
-              "css=tr:has(a[href*='{{claveAcceso}}']) button:has-text('{{categoria_objetivo}}')",
-              "css=div:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']) [title*='{{categoria_objetivo}}']",
-              "css=div:has-text('FACTURA'):has(a[href*='{{claveAcceso}}']) [aria-label*='{{categoria_objetivo}}']"
-            ]
+            "timeout": 20000,
+            "selector": "css=table#anchoDoc tr:has-text('FACTURA {{numero_factura}}') button.btn.btn-sm.btn-primary[onclick*='copiar('][onclick*='panel:{{categoria_panel}}:campo'], table#anchoDoc tr:has-text('FACTURA {{numero_factura_compacto}}') button.btn.btn-sm.btn-primary[onclick*='copiar('][onclick*='panel:{{categoria_panel}}:campo'], table#anchoDoc tr:has-text('{{numero_factura}}') button.btn.btn-sm.btn-primary[onclick*='copiar('][onclick*='panel:{{categoria_panel}}:campo'], table#anchoDoc tr:has-text('{{numero_factura_compacto}}') button.btn.btn-sm.btn-primary[onclick*='copiar('][onclick*='panel:{{categoria_panel}}:campo']"
           }
         ],
         "fallbackSteps": [
           {
             "type": "waitForSelector",
-            "timeout": 12000,
-            "selector": "css=div:has-text('FACTURA'), li:has-text('FACTURA'), tr:has-text('FACTURA')"
-          },
-          {
-            "type": "clickAny",
-            "logUrl": true,
-            "selectors": [
-              "css=div:has-text('FACTURA') button:has-text('{{categoria_objetivo}}')",
-              "css=li:has-text('FACTURA') button:has-text('{{categoria_objetivo}}')",
-              "css=tr:has-text('FACTURA') button:has-text('{{categoria_objetivo}}')",
-              "css=div:has-text('FACTURA') [title*='{{categoria_objetivo}}']",
-              "css=div:has-text('FACTURA') [aria-label*='{{categoria_objetivo}}']"
-            ]
+            "timeout": 20000,
+            "selector": "css=table#anchoDoc tr:has-text('FACTURA {{numero_factura}}') div.form-group:has(label:has-text('{{categoria_label}}')) button.btn.btn-sm.btn-primary, table#anchoDoc tr:has-text('FACTURA {{numero_factura_compacto}}') div.form-group:has(label:has-text('{{categoria_label}}')) button.btn.btn-sm.btn-primary, table#anchoDoc tr:has-text('{{numero_factura}}') div.form-group:has(label:has-text('{{categoria_label}}')) button.btn.btn-sm.btn-primary, table#anchoDoc tr:has-text('{{numero_factura_compacto}}') div.form-group:has(label:has-text('{{categoria_label}}')) button.btn.btn-sm.btn-primary"
           }
         ]
       },
       {
-        "type": "trySteps",
-        "log": "invoice_open_by_clave: abrir factura objetivo por claveAcceso",
-        "steps": [
-          {
-            "type": "waitForSelector",
-            "timeout": 12000,
-            "selector": "css=a[href*='{{claveAcceso}}'], button[onclick*='{{claveAcceso}}'], [onclick*='{{claveAcceso}}']"
-          },
-          {
-            "type": "clickAny",
-            "logUrl": true,
-            "selectors": [
-              "css=a[href*='{{claveAcceso}}']",
-              "css=button[onclick*='{{claveAcceso}}']",
-              "css=[onclick*='{{claveAcceso}}']"
-            ]
-          },
-          {
-            "type": "waitForURL",
-            "timeout": 60000,
-            "pattern": "facturas-electronicas\\.jsf\\?.*(clave|claveAcceso)="
-          }
-        ],
-        "fallbackSteps": [
-          {
-            "type": "waitForSelector",
-            "timeout": 10000,
-            "selector": "css=a:has-text('FACTURA '), a:has-text('Factura '), button:has-text('FACTURA '), button:has-text('Factura ')"
-          },
-          {
-            "type": "clickAny",
-            "logUrl": true,
-            "selectors": [
-              "css=a:has-text('FACTURA ')",
-              "css=a:has-text('Factura ')",
-              "css=button:has-text('FACTURA ')",
-              "css=button:has-text('Factura ')"
-            ]
-          },
-          {
-            "type": "waitForURL",
-            "timeout": 60000,
-            "pattern": "facturas-electronicas\\.jsf\\?.*(clave|claveAcceso)="
-          }
+        "type": "clickAny",
+        "logUrl": true,
+        "selectors": [
+          "css=table#anchoDoc tr:has-text('FACTURA {{numero_factura}}') button.btn.btn-sm.btn-primary[onclick*='copiar('][onclick*='panel:{{categoria_panel}}:campo']",
+          "css=table#anchoDoc tr:has-text('FACTURA {{numero_factura_compacto}}') button.btn.btn-sm.btn-primary[onclick*='copiar('][onclick*='panel:{{categoria_panel}}:campo']",
+          "css=table#anchoDoc tr:has-text('{{numero_factura}}') button.btn.btn-sm.btn-primary[onclick*='copiar('][onclick*='panel:{{categoria_panel}}:campo']",
+          "css=table#anchoDoc tr:has-text('{{numero_factura_compacto}}') button.btn.btn-sm.btn-primary[onclick*='copiar('][onclick*='panel:{{categoria_panel}}:campo']",
+          "css=table#anchoDoc tr:has-text('FACTURA {{numero_factura}}') div.form-group:has(label:has-text('{{categoria_label}}')) button.btn.btn-sm.btn-primary",
+          "css=table#anchoDoc tr:has-text('FACTURA {{numero_factura_compacto}}') div.form-group:has(label:has-text('{{categoria_label}}')) button.btn.btn-sm.btn-primary",
+          "css=table#anchoDoc tr:has-text('{{numero_factura}}') div.form-group:has(label:has-text('{{categoria_label}}')) button.btn.btn-sm.btn-primary",
+          "css=table#anchoDoc tr:has-text('{{numero_factura_compacto}}') div.form-group:has(label:has-text('{{categoria_label}}')) button.btn.btn-sm.btn-primary"
         ]
       }
     ]
@@ -464,15 +414,46 @@
       },
       {
         "type": "runAction",
-        "actionName": "invoice_open_by_clave",
-        "vars": { "claveAcceso": "{{clave_acceso}}", "categoria_objetivo": "{{categoria_objetivo}}" }
+        "actionName": "invoice_mark_category_by_numero",
+        "vars": {
+          "numero_factura": "{{numero_factura}}",
+          "categoria_panel": "{{categoria_panel}}",
+          "categoria_label": "{{categoria_label}}"
+        }
       },
       {
         "type": "assertOnPage",
-        "urlPattern": "facturas-electronicas\\.jsf\\?.*(clave|claveAcceso)="
+        "urlPattern": "facturas-electronicas\\.jsf\\?emisor=|facturas-electronicas\\.jsf",
+        "anyText": ["Facturas electrónicas"]
       },
-      { "type": "applyPrepare" },
-      { "type": "applyConfirm" }
+      {
+        "type": "clickAny",
+        "logUrl": true,
+        "selectors": [
+          "css=input[type='submit'][value='Guardar']",
+          "css=button:has-text('Guardar')",
+          "css=input.btn.btn-primary.btn-sm[type='submit'][value*='Guardar']",
+          "css=button.btn.btn-primary.btn-sm:has-text('Guardar')"
+        ]
+      },
+      {
+        "type": "trySteps",
+        "log": "e2e: esperar finalizacion tras click en Guardar",
+        "steps": [
+          {
+            "type": "waitForURL",
+            "timeout": 20000,
+            "pattern": "facturas-electronicas\\.jsf\\?emisor=|facturas-electronicas\\.jsf"
+          }
+        ],
+        "fallbackSteps": [
+          {
+            "type": "assertOnPage",
+            "urlPattern": "facturas-electronicas\\.jsf\\?emisor=|facturas-electronicas\\.jsf",
+            "anyText": ["Facturas electrónicas"]
+          }
+        ]
+      }
     ]
   },
 
