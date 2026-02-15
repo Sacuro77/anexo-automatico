@@ -28,6 +28,19 @@ assert.strictEqual(
   interpolateTemplate("{{factura_id}}-{{categoria_objetivo}}", context),
   "10-Servicios"
 );
+assert.strictEqual(context.numero_factura, "");
+
+const contextWithNumero = buildActionContext({
+  numero_factura: "001052004601882",
+});
+assert.strictEqual(contextWithNumero.numero_factura, "001-052-004601882");
+assert.strictEqual(contextWithNumero.numero_factura_compacto, "001052004601882");
+
+const contextFromClave = buildActionContext({
+  clave_acceso: "1507202501179141518700120010520046018821234567816"
+});
+assert.strictEqual(contextFromClave.numero_factura, "001-052-004601882");
+assert.strictEqual(contextFromClave.numero_factura_compacto, "001052004601882");
 
 const categoryMap = {
   "123": { value: "123" },

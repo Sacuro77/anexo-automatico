@@ -1,4 +1,83 @@
 const VALID_CATEGORY_MODES = new Set(["select", "fill", "click"]);
+const CATEGORY_DETAILS_MAP = {
+  SALUD: { panel: "salud", label: "Salud" },
+  ALIMENTACION: { panel: "alimentacion", label: "Alimentación" },
+  EDUCACION_ARTE_CULTURA: {
+    panel: "educacion",
+    label: "Educación, Arte y Cultura"
+  },
+  EDUCACION_ARTE_Y_CULTURA: {
+    panel: "educacion",
+    label: "Educación, Arte y Cultura"
+  },
+  TURISMO: { panel: "turismo", label: "Turismo" },
+  VESTIMENTA: { panel: "vestimenta", label: "Vestimenta" },
+  VIVIENDA: { panel: "vivienda", label: "Vivienda" }
+};
+
+function normalizeNumeroFactura(value) {
+  if (value === undefined || value === null) {
+    return "";
+  }
+  const raw = String(value).trim();
+  if (!raw) {
+    return "";
+  }
+  const grouped = raw.match(/(\d{3})\D*(\d{3})\D*(\d{9})/);
+  if (grouped) {
+    return `${grouped[1]}-${grouped[2]}-${grouped[3]}`;
+  }
+  const digitsOnly = raw.replace(/\D+/g, "");
+  if (digitsOnly.length === 15) {
+    return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6, 15)}`;
+  }
+  return "";
+}
+
+function deriveNumeroFacturaFromClaveAcceso(claveAcceso) {
+  if (claveAcceso === undefined || claveAcceso === null) {
+    return "";
+  }
+  const digitsOnly = String(claveAcceso).replace(/\D+/g, "");
+  if (digitsOnly.length !== 49) {
+    return "";
+  }
+  const establecimiento = digitsOnly.slice(24, 27);
+  const puntoEmision = digitsOnly.slice(27, 30);
+  const secuencial = digitsOnly.slice(30, 39);
+  if (!/^\d{3}$/.test(establecimiento) || !/^\d{3}$/.test(puntoEmision) || !/^\d{9}$/.test(secuencial)) {
+    return "";
+  }
+  return `${establecimiento}-${puntoEmision}-${secuencial}`;
+}
+
+function resolveNumeroFactura(numeroFactura, claveAcceso) {
+  const normalized = normalizeNumeroFactura(numeroFactura);
+  if (normalized) {
+    return normalized;
+  }
+  return deriveNumeroFacturaFromClaveAcceso(claveAcceso);
+}
+
+function normalizeCategoryKey(value) {
+  if (value === undefined || value === null) {
+    return "";
+  }
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function resolveCategoryDetails(value) {
+  const key = normalizeCategoryKey(value);
+  if (!key) {
+    return null;
+  }
+  return CATEGORY_DETAILS_MAP[key] || null;
+}
 
 function getActionsFromPlan(plan) {
   if (!plan || typeof plan !== "object") {
@@ -27,7 +106,7 @@ function buildActionContext(action = {}, extras = {}) {
     action.categoria_objetivo || action.categoria_nombre || action.categoria_id || "";
   const periodoTarget =
     action.periodoTarget || action.periodo_target || action.periodo || "";
-  return {
+  const context = {
     proveedor_id: action.proveedor_id || "",
     proveedor_ruc: action.proveedor_ruc || "",
     factura_id: action.factura_id || "",
@@ -35,10 +114,29 @@ function buildActionContext(action = {}, extras = {}) {
     categoria_id: action.categoria_id || "",
     categoria_nombre: action.categoria_nombre || "",
     categoria_objetivo: categoriaObjetivo,
+    categoria_panel: "",
+    categoria_label: "",
     periodoTarget,
     confianza: action.confianza || "",
     ...extras
   };
+  const numeroFactura = resolveNumeroFactura(
+    context.numero_factura || action.numero_factura || "",
+    context.clave_acceso || action.clave_acceso || ""
+  );
+  context.numero_factura = numeroFactura;
+  context.numero_factura_compacto = numeroFactura ? numeroFactura.replace(/-/g, "") : "";
+
+  const details = resolveCategoryDetails(
+    context.categoria_nombre || context.categoria_objetivo || context.categoria_id
+  );
+  if (!context.categoria_panel && details && details.panel) {
+    context.categoria_panel = details.panel;
+  }
+  if (!context.categoria_label && details && details.label) {
+    context.categoria_label = details.label;
+  }
+  return context;
 }
 
 function interpolateTemplate(value, context) {

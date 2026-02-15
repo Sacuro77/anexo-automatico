@@ -1021,6 +1021,17 @@ async function runNamedAction(actionName, vars = {}) {
     throw new Error(`Config requerida: ${safeName}.steps`);
   }
   const context = buildActionContext(action, safeVars);
+  if (safeName === "invoice_mark_category_by_numero" && !context.numero_factura) {
+    const evidence = {
+      numero_factura: safeVars.numero_factura || action.numero_factura || "",
+      clave_acceso: context.clave_acceso || "",
+      factura_id: action.factura_id || ""
+    };
+    console.error(`[invoice_mark_category_by_numero] missing numero_factura evidence=${JSON.stringify(evidence)}`);
+    throw new Error(
+      "numero_factura requerido para invoice_mark_category_by_numero. No se pudo resolver desde plan ni derivar desde clave_acceso."
+    );
+  }
   return runStepSequence(actionConfig.steps, context, { config, action });
 }
 
